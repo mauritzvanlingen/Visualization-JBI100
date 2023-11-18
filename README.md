@@ -22,7 +22,7 @@ download dependencies:
 pip install -r requirements.txt
 ```
 
-Om in VS code te werken met venv:
+Om in VS code te werken met venv :
 ``` bash
 code .
 ``` 
