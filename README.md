@@ -1,3 +1,9 @@
 # Visualization-JBI100
 
-vergeet niet om in een python 3.10 venv te werken
+Venv maken
+
+''' bash 
+cd C:\Users\Beheerder>cd C:\Users\Beheerder\Documents\DSAI master\Q2 Courses\Vizualisation\dashframework-main\dashframework-main
+
+
+
