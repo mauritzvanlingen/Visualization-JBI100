@@ -4,10 +4,10 @@ Anaconda venv maken
 
 set dir:
 ``` bash 
-cd C:\Users\Beheerder>cd C:\Users\Beheerder\Documents\DSAI master\Q2 Courses\Vizualisation\dashframework-main\dashframework-main  
+cd C:\Users\Beheerder\Documents\DSAI master\Q2 Courses\Vizualisation\dashframework-main\dashframework-main  
 ```
 
-create venv:
+(only once) create venv:
 ``` bash 
 conda create --project_env python=3.10
 ```
@@ -17,13 +17,13 @@ conda create --project_env python=3.10
 conda activate project_env
 ```
 
-download dependencies:
+(once) download dependencies:
 ``` bash
 pip install -r requirements.txt
 ```
 
 Om in VS code te werken met venv :
-``` bash
+``` 
 code .
 ``` 
 
