@@ -203,7 +203,7 @@ class ParallelCharts:
             dcc.Dropdown(
                 id="select-team-2",
                 options=[{"label": i, "value": i} for i in self.teams],
-                value=self.teams[0],
+                value=self.teams[1],
                 ),
             html.Br(),
             ], style={"textAlign": "float-left"}

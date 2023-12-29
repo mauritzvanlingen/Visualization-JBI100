@@ -37,7 +37,10 @@ if __name__ == '__main__':
         Input('graph-dropdown', 'value')]
     )
     def update_graphs(team_1, team_2, selected_graphs):
-        return pc.figures(selected_graphs, team_1, team_2)
+        if isinstance(selected_graphs, list):
+            return pc.figures(selected_graphs, team_1, team_2)
+        else:
+            return pc.figures([selected_graphs], team_1, team_2)
 
 
     app.run_server(debug=False, dev_tools_ui=False)
