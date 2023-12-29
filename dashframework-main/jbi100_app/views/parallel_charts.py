@@ -225,12 +225,4 @@ class ParallelCharts:
             ], style={"textAlign": "float-left"}
         )
         
-        # Update Plot button
-        update_button = html.Div(
-            id="update-button",
-            children = [
-                html.Button(id='update-plot-button', n_clicks=0, children='Update Plot')
-            ]
-        )
-        
-        return [description_card, team_card, graph_card, update_button]
+        return [description_card, team_card, graph_card]
