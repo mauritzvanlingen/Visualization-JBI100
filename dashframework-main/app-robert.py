@@ -7,7 +7,10 @@ from dash.dependencies import Input, Output
 
 if __name__ == '__main__':
     
-    pc = ParallelCharts()
+    pc = ParallelCharts(
+        color_team_1=[200,0,50],
+        color_team_2=[0, 200, 50]
+    )
     pc.read_files()
     pc.preprocess_data()
 
@@ -25,13 +28,15 @@ if __name__ == '__main__':
             html.Div(
                 id="right-column",
                 className="nine columns",
-                children=pc.figures(['data_set_main'], 'Argentina', 'France')
+                children=pc.figures(['data_set_main'], 'Argentina', 'France')[1] #default
             ),
         ],
     )
 
+    # If graph is selected, then graph is added and the variables of the graphs are added as an option to explanation
     @app.callback(
-        Output('right-column', 'children'),
+        [Output('explanation_selection', 'options'), 
+         Output('right-column', 'children')],
         [Input('select-team-1', 'value'),
          Input('select-team-2', 'value'),
         Input('graph-dropdown', 'value')]
@@ -42,5 +47,15 @@ if __name__ == '__main__':
         else:
             return pc.figures([selected_graphs], team_1, team_2)
 
+    # Display explanation of selected variable
+    @app.callback(
+        [Output('explanation', 'children')],
+        [Input('explanation_selection', 'value')]
+    )
+    def update_explanation(variable):
+        if variable:
+            return [f"This is the explanation for variable: {variable}"]
+        else:
+            return ["Choose a variable for which to show the explanation here."]
 
     app.run_server(debug=False, dev_tools_ui=False)

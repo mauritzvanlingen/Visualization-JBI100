@@ -11,7 +11,11 @@ from dash import html, dcc
 
 class ParallelCharts:
 
-    def __init__(self, data_source_path: str = "C:/Users/ljpsm/OneDrive/studie/tue/Visualisation/Assignment/FIFA DataSet/Data/"):
+    def __init__(self,
+                 color_team_1: list[int, int, int],
+                 color_team_2: list[int, int, int],
+                 data_source_path: str = "C:/Users/ljpsm/OneDrive/studie/tue/Visualisation/Assignment/FIFA DataSet/Data/"):
+        self.colors = [color_team_1, color_team_2]
         self.data_source_path = data_source_path
 
     def _data_path(self, relative: str) -> str:
@@ -134,10 +138,10 @@ class ParallelCharts:
 
         # create color scale
         color_scale = []
-        for i in range(len(teams_to_compare)):
-            color = 255 * i * 1/len(teams_to_compare)
-            color_scale.append((i * (1/len(teams_to_compare)), f"rgb({color}, {color}, {color})"))
-            color_scale.append(((i+1) * (1/len(teams_to_compare)), f"rgb({color}, {color}, {color})"))
+        for i in range(2):
+            color = f"rgb({self.colors[i][0]}, {self.colors[i][1]}, {self.colors[i][2]})"
+            color_scale.append((i * 0.5, color))
+            color_scale.append(((i+1) * 0.5, color))
 
         # create figure with parallel axis (without the categorial team axis)
         columns = [col for col in df_filtered.columns if col != "team"]
@@ -161,8 +165,12 @@ class ParallelCharts:
 
         return fig
     
+    def get_variables(self, data_set_name: str) -> list[str]:
+        return [col for col in getattr(self, data_set_name).columns if col != "team"]
+    
     def figures(self, data_sets: list[str], *teams_to_compare: list[str]) -> list[plotly.graph_objs.Figure]:
 
+        variables = []
         graphs = []
 
         for data_set_name in data_sets:
@@ -174,7 +182,9 @@ class ParallelCharts:
                     )
             )
 
-        return graphs
+            variables += self.get_variables(data_set_name)
+
+        return variables, graphs
     
     def menu_layout(self):
 
@@ -184,11 +194,12 @@ class ParallelCharts:
             html.H5("Player data"),
             html.Div(
                 id="intro",
-                children="Choose the teams to compare and the sub graphs to view.",
+                children="Choose the teams to compare and the graphs to view.",
                 ),
             ],
         )
 
+        # Selecting teams
         team_card = html.Div(
         id="team-card",
         children=[
@@ -209,12 +220,12 @@ class ParallelCharts:
             ], style={"textAlign": "float-left"}
         )
 
-        # Label for Variables of Interest
+        # Label for graphs of Interest
         graph_card = html.Div(
         id="graph-card",
         children=[
             html.Label("Graphs of Interest:"),
-                # Dropdown for selecting variables
+                # Dropdown for selecting graphs
                 dcc.Dropdown(
                     id='graph-dropdown',
                     multi=True,
@@ -224,5 +235,23 @@ class ParallelCharts:
             html.Br(),
             ], style={"textAlign": "float-left"}
         )
+
+        # Explanation of columns
+        explanation_card = html.Div(
+        id="explanation-card",
+        children=[
+            html.Label("Explanation of variables"),
+            dcc.Dropdown(
+                id="explanation_selection",
+                value=[],
+                options=self.get_variables(self.data_sets[0])
+            ),
+            html.Br(),
+            html.Div(
+                id="explanation",
+                children="Choose a variable for which to show the explanation here.",
+                ),
+            ], style={"textAlign": "float-left"}
+        )
         
-        return [description_card, team_card, graph_card]
+        return [description_card, team_card, graph_card, explanation_card]
