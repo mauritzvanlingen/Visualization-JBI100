@@ -4,15 +4,15 @@ from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
 from PIL import Image
+from helperFunctionsArlette import list_countries, formation_to_coordinates, calculate_normalized_means
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
 
-dropdown_options_countries = [
-    {'label': 'Country 1', 'value': 'country1'},
-    {'label': 'Country 2', 'value': 'country2'},
-    # Add more countries as needed
-]
+countries_list = list_countries()
+
+dropdown_options_countries = [{'label': country, 'value': country} for country in countries_list]
+
 dropdown_options_stats = [
     {'label': 'Player positions', 'value': 'positions'},
     {'label': 'Mean number of touches', 'value': 'touches'},
@@ -46,7 +46,7 @@ app.layout = html.Div(
         dcc.Dropdown(
             id='country-dropdown',
             options=dropdown_options_countries,
-            value='country1'  # Default value on load
+            value=None  # Default value on load
         ),
         dcc.Dropdown(
             id='stats-dropdown',
@@ -63,25 +63,6 @@ app.layout = html.Div(
     ],
     style={'textAlign': 'center'}
 )
-
-@app.callback(
-    Output('goalkeeper-stats', 'children'),
-    [Input('soccer-field', 'clickData')])
-def display_click_data(clickData):
-    if clickData is not None:
-        point_id = clickData['points'][0]['text']  # Assuming the point's text is its unique identifier
-        if point_id == 1:
-            # Load the goalkeeper's statistics and create a new figure or HTML components to display them
-            # For example, let's say you have a DataFrame 'goalkeeper_stats_df'
-            return html.Div([
-                html.H2("Goalkeeper Statistics"),
-                # Create components to display statistics
-                # dcc.Graph(figure=goalkeeper_stats_figure) for a new figure
-                # Or display raw data
-                # html.P(f"Save Percentage: {goalkeeper_stats_df['save_percentage'][0]}")
-            ])
-    return 
-
 
 @app.callback(
     Output('soccer-field', 'figure'),
@@ -101,24 +82,29 @@ def update_figure(selected_country, selected_statistic):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)"
     )
-    
-    if selected_statistic == 'positions':
-        df = pd.read_csv(f'{selected_country}_positions.csv')
-        fig.add_trace(go.Scatter(
-            x=df['x']*1.5,
-            y=df['y'],
-            mode='markers',
-            text=df['player'],
-            name='players',
-            marker=dict(size=20, color='red')
-        ))
+    if selected_statistic == 'positions' and selected_country != None:
+        # Call the function to get positions for the selected country
+        positions = formation_to_coordinates(selected_country)
+
+
+        # Add each player position as a separate trace
+        for pos in positions:
+            fig.add_trace(go.Scatter(
+                x=[pos[0]],  # Multiply by 1.5 if you need to scale the x position
+                y=[pos[1]],
+                mode='markers',
+                name=f'Player at {pos}',
+                marker=dict(size=20, color='red')
+            ))
+        fig.update_yaxes(range=[0, h_line])
+        fig.update_layout(showlegend=False)
 
     elif selected_statistic == 'touches':
         for third in [1/3, 2/3]:
             fig.add_shape(type="line", x0=third *w_line, y0=0, x1=third * w_line, y1=h_line, line=dict(color="black", width=2, dash="dash"))
         df_touches = pd.DataFrame({
             'Third': ['Defensive 1/3', 'Middle 1/3', 'Attacking 1/3'],
-            'Touches': [250, 344, 600]
+            'Touches': calculate_normalized_means('touches', selected_country)
         })
         third_width = w_line / 3
         for index, row in df_touches.iterrows():
@@ -138,7 +124,7 @@ def update_figure(selected_country, selected_statistic):
             fig.add_shape(type="line", x0=third *w_line, y0=0, x1=third * w_line, y1=h_line, line=dict(color="black", width=2, dash="dash"))
         df_tackles = pd.DataFrame({
             'Third': ['Defensive 1/3', 'Middle 1/3', 'Attacking 1/3'],
-            'Tackles': [100, 400, 300]
+            'Tackles': calculate_normalized_means('tackles', selected_country)
         })
         third_width = w_line / 3
         for index, row in df_tackles.iterrows():
@@ -154,6 +140,14 @@ def update_figure(selected_country, selected_statistic):
         fig.update_layout(showlegend=False)
 
     return fig
+
+@app.callback(Output('goalkeeper-stats', 'children'),[Input('soccer-field', 'clickData'), Input('country-dropdown', 'value')])
+def display_click_data(clickData, selected_country):
+    if clickData is not None:
+        point_id = clickData['points'][0]['curveNumber'] # Assuming the point's text is its unique identifier
+        if point_id == 1:
+            return html.Div([html.H2("Goalkeeper Statistics"),])
+    return 
 
 # Run the app
 if __name__ == '__main__':
