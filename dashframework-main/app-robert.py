@@ -10,7 +10,7 @@ if __name__ == '__main__':
     pc = ParallelCharts(
         color_team_1=[200,0,50],
         color_team_2=[0, 200, 50],
-        data_source_path="C:/Users/ljpsm/OneDrive/studie/tue/Visualisation/Assignment/FIFA DataSet/Data/" # set path to data folder of FIFA dataset
+        data_source_path="FIFA DataSet/Data/" # set path to data folder of FIFA dataset
     )
     pc.read_files()
     pc.preprocess_data()
