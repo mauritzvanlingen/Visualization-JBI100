@@ -3,6 +3,19 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 
+
+def return_df(list_type):
+    df = pd.read_csv(r'C:\Users\20202893\Documents\Data Science & Artficial Intelligence\Y1-Q2\JBI100 - Visualization\FIFA DataSet\Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
+    if list_type == 'def':
+        list_feat = ['gk_free_kick_goals_against', 'gk_corner_kick_goals_against', 'gk_own_goals_against', 'gk_crosses_stopped_pct', 'blocked_shots', 'blocked_passes', 'interceptions', 'clearances', 'errors', 'tackles_def_3rd', 'touches_def_3rd', 'miscontrols', 'dispossessed']
+    elif list_type == 'att':
+        list_feat = ['shots_on_target_pct', 'goals_per_shot', 'average_shot_distance', 'passes_pct_short', 'passes_pct_medium', 'passes_pct_long', 'tackles_att_3rd', 'touches_att_3rd', 'dribbles', 'passes_received', 'aerials_won_pct', 'passes_offsides']
+    elif list_type == 'both':
+        list_feat = ['gk_free_kick_goals_against', 'gk_corner_kick_goals_against', 'gk_own_goals_against', 'gk_crosses_stopped_pct', 'blocked_shots', 'blocked_passes', 'interceptions', 'clearances', 'errors', 'tackles_def_3rd', 'touches_def_3rd', 'miscontrols', 'dispossessed', 'shots_on_target_pct', 'goals_per_shot', 'average_shot_distance', 'passes_pct_short', 'passes_pct_medium', 'passes_pct_long', 'tackles_att_3rd', 'touches_att_3rd', 'dribbles', 'passes_received', 'aerials_won_pct', 'passes_offsides']
+    return df, list_feat
+
+
+
 def list_countries():
     df = pd.read_csv(r'C:\Users\20202893\Documents\Data Science & Artficial Intelligence\Y1-Q2\JBI100 - Visualization\FIFA DataSet\Data\FIFA World Cup 2022 Match Data\data.csv', delimiter=',')
     # Get unique countries from the home_team column

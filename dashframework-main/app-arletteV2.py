@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 import pandas as pd
 from PIL import Image
 from helperFunctionsArlette import list_countries, formation_to_coordinates, calculate_normalized_means, return_df
+from dash.exceptions import PreventUpdate
 
 
 # Initialize the Dash app
@@ -21,23 +22,65 @@ dropdown_options_stats = [
 ]
 
 # Create a figure
+# img_array = Image.open("jbi100_app/assets/soccer-field.jpg")
+# fig = go.Figure(go.Image(z=img_array))
+
+# fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
+# fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
+
+# height = 500
+# width = 1000
+# h_line = 700
+# w_line= 1044
+
+# # Add shapes to the layout of the figure
+# fig.update_layout(
+#     height=height,  # Set the height of the figure
+#     width=width,  # Set the width of the figure
+#     margin=dict(l=20, r=20, t=20, b=20),  # Adjust margins to reduce white space
+#     paper_bgcolor="rgba(0,0,0,0)",  # Set background color of the figure to transparent
+#     plot_bgcolor="rgba(0,0,0,0)",  # Set background color of the plotting area to transparent
+# )
+    # Initialize the figure with the soccer field image
 img_array = Image.open("jbi100_app/assets/soccer-field.jpg")
 fig = go.Figure(go.Image(z=img_array))
-
-fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
-fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
-
 height = 500
 width = 1000
 h_line = 700
 w_line= 1044
-# Update layout properties to set the figure size and remove white space around the figure
+fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
+fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
+
+width_real = 1045
+left_half = {
+'type': 'rect',
+'x0': 0,
+'y0': 0,
+'x1': width_real / 2,  # x1 is at the halfway point of the width
+'y1': h_line,
+'line': {'width': 0},  # Invisible border
+'fillcolor': 'rgba(0, 0, 255, 0.2)',  # Semi-transparent blue
+'opacity': 0  # Start as invisible
+}
+
+right_half = {
+    'type': 'rect',
+    'x0': width_real / 2,
+    'y0': 0,
+    'x1': width_real,
+    'y1': h_line,
+    'line': {'width': 0},
+    'fillcolor': 'rgba(255, 0, 0, 0.2)',  # Semi-transparent red
+    'opacity': 0
+}
+shapes = [left_half, right_half]
 fig.update_layout(
     height=height,  # Set the height of the figure
     width=width,  # Set the width of the figure
     margin=dict(l=20, r=20, t=20, b=20),  # Adjust margins to reduce white space
     paper_bgcolor="rgba(0,0,0,0)",  # Set background color of the figure to transparent
-    plot_bgcolor="rgba(0,0,0,0)"  # Set background color of the plotting area to transparent
+    plot_bgcolor="rgba(0,0,0,0)",  # Set background color of the plotting area to transparent
+    shapes = [left_half, right_half]
 )
 
 # Dash app layout
@@ -49,22 +92,17 @@ app.layout = html.Div(
             options=dropdown_options_countries,
             value=None  # Default value on load
         ),
-        dcc.Dropdown(
-            id='stats-dropdown',
-            options=dropdown_options_stats,
-            value='positions'  # Default value on load
-        ),
-        
+       
         html.Div(
             children=[
         html.Div(
             children=[
                 dcc.Graph(id='soccer-field', figure=fig)
             ],
-            style={'display': 'flex', 'justifyContent': 'center', 'width': '45%'}
+            style={'display': 'flex', 'justifyContent': 'center', 'width': '50%'}
         ),
         
-        html.Div(id='feature-checkbox-country', style={'display': 'none', 'width': '45%'},
+        html.Div(id='feature-checkbox-country', style={'display': 'none', 'width': '50%'},
             children=[
             
             html.Div(id='feature-selection-container', children=[
@@ -115,30 +153,39 @@ def reset_checklist(n_clicks):
     # When the button is clicked, reset the checklist value to an empty list
     return [] if n_clicks > 0 else dash.no_update
 
-
 @app.callback(
     Output('soccer-field', 'figure'),
     [Input('country-dropdown', 'value'),
-     Input('stats-dropdown', 'value')])
-def update_figure(selected_country, selected_statistic):
-
-    # Initialize the figure with the soccer field image
+     Input('soccer-field', 'hoverData')],
+    [State('soccer-field', 'figure')])
+def update_figure(selected_country, hoverData, current_figure):
+    ctx = dash.callback_context
     img_array = Image.open("jbi100_app/assets/soccer-field.jpg")
     fig = go.Figure(go.Image(z=img_array))
+    height = 500
+    width = 1000
+    h_line = 700
+    w_line= 1044
     fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
     fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
     fig.update_layout(
-        height=500,
-        width=1000,
-        margin=dict(l=20, r=20, t=20, b=20),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)"
+    height=height,  # Set the height of the figure
+    width=width,  # Set the width of the figure
+    margin=dict(l=20, r=20, t=20, b=20),  # Adjust margins to reduce white space
+    paper_bgcolor="rgba(0,0,0,0)",  # Set background color of the figure to transparent
+    plot_bgcolor="rgba(0,0,0,0)",  # Set background color of the plotting area to transparent
     )
-    if selected_statistic == 'positions' and selected_country != None:
+
+    if not ctx.triggered:
+        # If no input has been triggered yet, raise PreventUpdate to do nothing
+        raise PreventUpdate
+
+    # Get the ID of the input that triggered the callback
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if selected_country != None:
         # Call the function to get positions for the selected country
         positions = formation_to_coordinates(selected_country)
-
-
         # Add each player position as a separate trace
         idx_pos = 1
         for pos in positions:
@@ -148,7 +195,7 @@ def update_figure(selected_country, selected_statistic):
                     y=[pos[1]],
                     mode='markers',
                     name=f'Player at {pos}',
-                    marker=dict(size=20, color='blue')
+                    marker=dict(size=10, color='black')
                 ))
             else:
                 fig.add_trace(go.Scatter(
@@ -156,52 +203,28 @@ def update_figure(selected_country, selected_statistic):
                     y=[pos[1]],
                     mode='markers',
                     name=f'Player at {pos}',
-                    marker=dict(size=20, color='red')
+                    marker=dict(size=10, color='black')
                 ))
             idx_pos = idx_pos+1
 
         fig.update_yaxes(range=[0, h_line])
         fig.update_layout(showlegend=False)
+        
+    if triggered_id == 'soccer-field':
+        if hoverData:
+            # Check where the hover is and update the opacity accordingly
+            hover_x = hoverData['points'][-1]['x']
+            if hover_x <= width_real / 2:
+                shapes[0]['opacity'] = 0.8  # Left half
+                shapes[1]['opacity'] = 0 
+            else:
+                shapes[0]['opacity'] = 0 
+                shapes[1]['opacity'] = 0.8  # Right half
+        else:
+            shapes[0]['opacity'] = 0  # Left half
+            shapes[1]['opacity'] = 0  # Left half
 
-    elif selected_statistic == 'touches':
-        for third in [1/3, 2/3]:
-            fig.add_shape(type="line", x0=third *w_line, y0=0, x1=third * w_line, y1=h_line, line=dict(color="black", width=2, dash="dash"))
-        df_touches = pd.DataFrame({
-            'Third': ['Defensive 1/3', 'Middle 1/3', 'Attacking 1/3'],
-            'Touches': calculate_normalized_means('touches', selected_country)
-        })
-        third_width = w_line / 3
-        for index, row in df_touches.iterrows():
-            fig.add_trace(go.Bar(
-                x=[(index + 0.5) * third_width],  # Position the bar in the middle of the third
-                y=[row['Touches']],
-                width=[0.8 * third_width],  # Set the width of the bar to be less than the third's width
-                marker_color='blue',
-                opacity=0.6,
-                name=row['Third']
-            ))
-        fig.update_yaxes(range=[0, h_line])
-        fig.update_layout(showlegend=False)
-
-    elif selected_statistic == 'tackles':
-        for third in [1/3, 2/3]:
-            fig.add_shape(type="line", x0=third *w_line, y0=0, x1=third * w_line, y1=h_line, line=dict(color="black", width=2, dash="dash"))
-        df_tackles = pd.DataFrame({
-            'Third': ['Defensive 1/3', 'Middle 1/3', 'Attacking 1/3'],
-            'Tackles': calculate_normalized_means('tackles', selected_country)
-        })
-        third_width = w_line / 3
-        for index, row in df_tackles.iterrows():
-            fig.add_trace(go.Bar(
-                x=[(index + 0.5) * third_width],  # Position the bar in the middle of the third
-                y=[row['Tackles']],
-                width=[0.8 * third_width],  # Set the width of the bar to be less than the third's width
-                marker_color='red',
-                opacity=0.6,
-                name=row['Third']
-            ))
-        fig.update_yaxes(range=[0, h_line])
-        fig.update_layout(showlegend=False)
+        fig.update_layout(shapes=shapes)
 
     return fig
 
@@ -211,9 +234,10 @@ def update_figure(selected_country, selected_statistic):
                Input('feature-dropdown', 'value')])
 def display_click_data(clickData, selected_country, selected_feature):
     if clickData is not None:
-        point_id = clickData['points'][0]['curveNumber'] # Assuming the point's text is its unique identifier
+        width_real = 1045
+        point_id = clickData['points'][-1]['x'] # Assuming the point's text is its unique identifier
         
-        if point_id <= 7 and selected_feature is not None:
+        if point_id <= width_real / 2 and selected_feature is not None:
             df, list_feat = return_df('def')
             fig = go.Figure()
             fig.add_trace(go.Box(y=df[selected_feature], name='Global'))
@@ -234,7 +258,8 @@ def display_click_data(clickData, selected_country, selected_feature):
                 #html.H2(f"Metrics of defensive strategy"),
                 dcc.Graph(figure=fig)
             ])
-        elif point_id > 7 and selected_feature is not None:
+        elif point_id > width_real / 2 and selected_feature is not None:
+
             df, list_feat = return_df('att')
             fig = go.Figure()
             fig.add_trace(go.Box(y=df[selected_feature], name='Global'))
@@ -266,9 +291,9 @@ def display_click_data(clickData, selected_country, selected_feature):
 )
 def update_feature_dropdown(clickData, selected_country):
     if clickData is not None:
-        point_id = clickData['points'][0]['curveNumber']
-        
-        if point_id <= 7:
+        point_id = clickData['points'][-1]['x']
+        width_real = 1045
+        if point_id <= width_real / 2:
             df, list_feat = return_df('def')
         else:
             df, list_feat = return_df('att')
