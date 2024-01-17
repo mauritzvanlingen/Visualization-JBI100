@@ -96,10 +96,7 @@ class ParallelCharts:
             lenmode="pixels", len=100,
             ))
         
-        return dcc.Graph(
-            id=f'parallel',
-            figure=fig
-            )
+        return fig
             
     def menu_layout(self):
 
