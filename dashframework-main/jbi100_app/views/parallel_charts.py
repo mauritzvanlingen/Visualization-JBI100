@@ -13,10 +13,9 @@ class ParallelCharts:
 
     def __init__(self,
                  color_team_1: list[int, int, int],
-                 color_team_2: list[int, int, int],
-                 data_source_path: str = "C:/Users/ljpsm/OneDrive/studie/tue/Visualisation/Assignment/FIFA DataSet/Data/"):
+                 color_team_2: list[int, int, int]
+                ):
         self.colors = [color_team_1, color_team_2]
-        self.data_source_path = data_source_path
 
         self.categories = {
             "attack": [
@@ -50,11 +49,8 @@ class ParallelCharts:
         self.columns = []
         for category_columns in self.categories.values():
             self.columns += category_columns
-
-    def _data_path(self, relative: str) -> str:
-        return os.path.join(self.data_source_path, relative) 
     
-    def read_file(self, path) -> None:
+    def read_file(self, path : str = "data-used.csv") -> None:
         self.df = pd.read_csv(path)
 
         # read in teams
