@@ -54,49 +54,8 @@ class ParallelCharts:
     def _data_path(self, relative: str) -> str:
         return os.path.join(self.data_source_path, relative) 
     
-    def read_files(self) -> None:
-        # Player data
-        self.df_player_defense       = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_defense.csv'), delimiter=',')
-        self.df_player_gca           = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_gca.csv'), delimiter=',')
-        self.df_player_misc          = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_misc.csv'), delimiter=',')
-        self.df_player_passing       = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_passing.csv'), delimiter=',')
-        self.df_player_passing_types = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_passing_types.csv'), delimiter=',')
-        self.df_player_possession    = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_possession.csv'), delimiter=',')
-        self.df_player_shooting      = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_shooting.csv'), delimiter=',')
-        self.df_player_stats         = pd.read_csv(self._data_path('FIFA World Cup 2022 Player Data/player_stats.csv'), delimiter=',')
-                        
-    def preprocess_data(self) -> pd.DataFrame:
-        
-        # merge all data
-        df = pd.concat([
-            self.df_player_defense.set_index("team"),
-            self.df_player_gca.set_index("team"),
-            self.df_player_misc.set_index("team"),
-            self.df_player_passing.set_index("team"),
-            self.df_player_passing_types.set_index("team"),
-            self.df_player_possession.set_index("team"),
-            self.df_player_shooting.set_index("team"),
-            self.df_player_stats.set_index("team")
-        ], axis=1)
-
-        # fill na values
-        df.fillna(value = 0, inplace=True)
-
-        # create new variables
-        df["into_penalty_area"] = df.apply(lambda x: x["passes_into_penalty_area"] + x["crosses_into_penalty_area"], axis=1)
-        df["pct_touches_att_pen_area"] = df.apply(lambda x: x["touches_att_pen_area"] / x["touches"] if x["touches"] > 0 else 0, axis=1)
-
-        # only keep variables that we use
-        df = df[self.columns]
-
-        # scale data
-        df = (df - df.min())/(df.max()-df.min())
-
-        # take the man per country
-        df = df.groupby(by='team').mean()
-
-        # reset index
-        self.df = df.reset_index()
+    def read_file(self, path) -> None:
+        self.df = pd.read_csv(path)
 
         # read in teams
         self.teams = list(set(self.df['team']))
