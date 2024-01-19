@@ -1,0 +1,42 @@
+player,position,team,age,club,birth_year,gk_games,gk_games_starts,gk_minutes,minutes_90s,gk_goals_against,gk_goals_against_per90,gk_shots_on_target_against,gk_saves,gk_save_pct,gk_wins,gk_ties,gk_losses,gk_clean_sheets,gk_clean_sheets_pct,gk_pens_att,gk_pens_allowed,gk_pens_saved,gk_pens_missed,gk_pens_save_pct
+Aimen Dahmen,GK,Tunisia,25-324,CS Sfaxien,1997,3,3,270,3.0,1,0.33,10,9,90.0,1,1,1,2,66.7,0,0,0,0,
+Alireza Beiranvand,GK,IR Iran,30-088,Persepolis,1992,2,2,109,1.2,1,0.83,5,4,80.0,0,0,1,0,0.0,0,0,0,0,
+Alisson,GK,Brazil,30-077,Liverpool,1992,4,4,379,4.2,2,0.47,7,5,71.4,2,1,0,2,50.0,0,0,0,0,
+Andries Noppert,GK,Netherlands,28-255,Heerenveen,1994,5,5,480,5.3,4,0.75,22,18,86.4,3,2,0,2,40.0,1,1,0,0,0.0
+André Onana,GK,Cameroon,26-260,Inter,1996,1,1,80,0.9,1,1.13,3,2,66.7,0,0,1,0,0.0,0,0,0,0,
+Danny Ward,GK,Wales,29-179,Leicester City,1993,2,1,94,1.0,5,4.79,9,4,44.4,0,0,1,0,0.0,0,0,0,0,
+Devis Epassy,GK,Cameroon,29-319,Abha,1993,2,2,180,2.0,3,1.50,12,9,75.0,1,1,0,1,50.0,0,0,0,0,
+Diogo Costa,GK,Portugal,23-090,Porto,1999,5,5,450,5.0,6,1.20,17,11,64.7,3,0,2,1,20.0,0,0,0,0,
+Dominik Livaković,GK,Croatia,27-343,Dinamo Zagreb,1995,7,7,690,7.7,7,0.91,31,24,80.6,2,4,1,2,28.6,1,1,0,0,0.0
+Ederson,GK,Brazil,29-123,Manchester City,1993,1,1,90,1.0,1,1.00,3,2,66.7,0,0,1,0,0.0,0,0,0,0,
+Edouard Mendy,GK,Senegal,30-292,Chelsea,1992,4,4,360,4.0,7,1.75,14,7,50.0,2,0,2,0,0.0,0,0,0,0,
+Emiliano Martínez,GK,Argentina,30-107,Aston Villa,1992,7,7,690,7.7,8,1.04,13,6,53.8,4,2,1,3,42.9,2,2,0,0,0.0
+Gregor Kobel,GK,Switzerland,25-012,Dortmund,1997,1,1,90,1.0,2,2.00,4,2,50.0,1,0,0,0,0.0,0,0,0,0,
+Guillermo Ochoa,GK,Mexico,37-158,América,1985,3,3,270,3.0,3,1.00,6,2,50.0,1,1,1,1,33.3,1,0,1,0,100.0
+Hernán Galíndez,GK,Ecuador,35-263,SD Aucas,1987,3,3,270,3.0,3,1.00,4,1,50.0,1,1,1,1,33.3,1,1,0,0,0.0
+Hossein Hosseini,GK,IR Iran,30-171,Esteghlal,1992,2,1,161,1.8,6,3.35,10,4,40.0,1,0,0,1,100.0,0,0,0,0,
+Hugo Lloris,GK,France,35-357,Tottenham,1986,6,6,570,6.3,7,1.11,24,17,83.3,5,1,0,1,16.7,4,3,0,1,0.0
+Jordan Pickford,GK,England,28-286,Everton,1994,5,5,450,5.0,4,0.80,11,7,72.7,3,1,1,3,60.0,1,1,0,0,0.0
+Kasper Schmeichel,GK,Denmark,36-043,Nice,1986,3,3,270,3.0,3,1.00,11,8,72.7,0,1,2,1,33.3,0,0,0,0,
+Keylor Navas,GK,Costa Rica,36-003,Paris S-G,1986,3,3,270,3.0,11,3.67,22,11,54.5,1,0,2,1,33.3,1,1,0,0,0.0
+Kim Seung-gyu,GK,Korea Republic,32-079,Al-Shabab,1990,4,4,360,4.0,8,2.00,19,11,63.2,1,1,2,1,25.0,1,1,0,0,0.0
+Lawrence Ati-Zigi,GK,Ghana,26-019,St. Gallen,1996,3,3,270,3.0,7,2.33,17,10,64.7,1,0,2,0,0.0,1,1,0,0,0.0
+Manuel Neuer,GK,Germany,36-266,Bayern Munich,1986,3,3,270,3.0,5,1.67,13,8,61.5,1,1,1,0,0.0,0,0,0,0,
+Mathew Ryan,GK,Australia,30-254,FC Copenhagen,1992,4,4,360,4.0,6,1.50,18,12,66.7,2,0,2,2,50.0,0,0,0,0,
+Matt Turner,GK,United States,28-177,Arsenal,1994,4,4,360,4.0,4,1.00,12,8,75.0,1,2,1,2,50.0,1,1,0,0,0.0
+Meshaal Barsham,GK,Qatar,24-307,Al Sadd SC,1998,2,2,180,2.0,5,2.50,9,4,44.4,0,0,2,0,0.0,0,0,0,0,
+Milan Borjan,GK,Canada,35-056,Red Star,1987,3,3,270,3.0,7,2.33,15,8,53.3,0,0,3,0,0.0,0,0,0,0,
+Mohammed Al-Owais,GK,Saudi Arabia,31-069,Al-Hilal,1991,3,3,270,3.0,5,1.67,19,14,78.9,1,0,2,0,0.0,1,1,0,0,0.0
+Munir,GK,Morocco,33-222,Al-Wehda,1989,1,1,90,1.0,0,0.00,3,3,100.0,1,0,0,1,100.0,0,0,0,0,
+Saad Al Sheeb,GK,Qatar,32-302,Al Sadd SC,1990,1,1,90,1.0,2,2.00,3,1,66.7,0,0,1,0,0.0,1,1,0,0,0.0
+Sergio Rochet,GK,Uruguay,29-270,Nacional,1993,3,3,270,3.0,2,0.67,7,4,85.7,1,1,1,2,66.7,2,1,1,0,50.0
+Shūichi Gonda,GK,Japan,33-290,S-Pulse,1989,4,4,390,4.3,4,0.92,19,15,84.2,2,1,1,0,0.0,1,1,0,0,0.0
+Steve Mandanda,GK,France,37-265,Rennes,1985,1,1,90,1.0,1,1.00,3,2,66.7,0,0,1,0,0.0,0,0,0,0,
+Thibaut Courtois,GK,Belgium,30-221,Real Madrid,1992,3,3,270,3.0,2,0.67,11,8,81.8,1,1,1,2,66.7,1,0,1,0,100.0
+Unai Simón,GK,Spain,25-190,Athletic Club,1997,4,4,390,4.3,3,0.69,9,6,66.7,1,2,1,2,50.0,0,0,0,0,
+Vanja Milinković-Savić,GK,Serbia,25-301,Torino,1997,3,3,270,3.0,8,2.67,24,16,66.7,0,1,2,0,0.0,0,0,0,0,
+Wayne Hennessey,GK,Wales,35-328,Nott'ham Forest,1987,2,2,175,1.9,1,0.51,5,4,80.0,0,1,0,0,0.0,0,0,0,0,
+Wojciech Szczęsny,GK,Poland,32-244,Juventus,1990,4,4,360,4.0,5,1.25,28,21,82.1,1,1,2,2,50.0,2,0,2,0,100.0
+Wéverton,GK,Brazil,35-005,Palmeiras,1987,1,0,11,0.1,0,0.00,0,0,,0,0,0,0,,0,0,0,0,
+Yann Sommer,GK,Switzerland,34-001,M'Gladbach,1988,3,3,270,3.0,7,2.33,19,12,63.2,1,0,2,1,33.3,0,0,0,0,
+Yassine Bounou,GK,Morocco,31-257,Sevilla,1991,6,6,570,6.3,5,0.79,11,7,54.5,2,2,2,3,50.0,0,0,0,0,

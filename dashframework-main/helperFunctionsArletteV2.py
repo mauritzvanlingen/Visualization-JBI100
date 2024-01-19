@@ -60,8 +60,8 @@ def create_merged_df():
                 "average_shot_distance",
                 ]
     
-    df_team = pd.read_csv(r'C:\Users\20202893\Documents\Data Science & Artficial Intelligence\Y1-Q2\JBI100 - Visualization\FIFA DataSet\Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
-    df_fifa = pd.read_csv(r'C:\Users\20202893\Documents\Data Science & Artficial Intelligence\Y1-Q2\JBI100 - Visualization\FIFA DataSet\Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv', delimiter=',')
+    df_team = pd.read_csv(r'Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
+    df_fifa = pd.read_csv(r'Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv', delimiter=',')
     # Merge dataframes and select features 
     merged_df = pd.merge(df_team, df_fifa, on='team')
     red_mer_df = merged_df[features].copy()
@@ -109,8 +109,9 @@ def corr_plots(idx):
                 "xg_per90",
                 "average_shot_distance",
                 ]]
-    df_historic_fifa_ranking = pd.read_csv(r'C:\Users\20202893\Documents\Data Science & Artficial Intelligence\Y1-Q2\JBI100 - Visualization\FIFA DataSet\Data\FIFA World Cup Historic\fifa_ranking_2022-10-06.csv', delimiter=',')
-    df_team_data = pd.read_csv(r'C:\Users\20202893\Documents\Data Science & Artficial Intelligence\Y1-Q2\JBI100 - Visualization\FIFA DataSet\Data\FIFA World Cup 2022 Team Data\team_data.csv', delimiter=',')
+
+    df_team_data = pd.read_csv(r'Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
+    df_historic_fifa_ranking = pd.read_csv(r'Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv', delimiter=',')
     cat = cats[idx]
     rank_mapping = df_historic_fifa_ranking.set_index('team')['rank'].to_dict()
     df_team_data['rank'] = df_team_data['team'].map(rank_mapping)*-1
