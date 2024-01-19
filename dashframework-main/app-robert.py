@@ -2,13 +2,11 @@ from jbi100_app.main import app
 from jbi100_app.views.parallel_charts_adapted import ViolinPlots
 
 from dash import html, dcc
-from dash.dependencies import Input, Output
-import dash_bootstrap_components as dbc
 
 # Initialize necessary components for dash graphing
 vp = ViolinPlots(path=r"C:\Users\ljpsm\OneDrive\kopie van afbeeldingen en documenten\Documenten\MotivationGPT\Visualization-JBI100\data-used.csv")
 
-features = [# "team", 
+features = ["team", 
             # "rank", 
             # "minutes", 
             "clearances",

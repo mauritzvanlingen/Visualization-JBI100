@@ -12,47 +12,16 @@ from dash import html, dcc
 
 class ViolinPlots:
 
-    def __init__(self,
-                 path
-                ):
+    def __init__(self, path : str = "data-used.csv"):
         
         self._read_file(path)
-
-        self.categories = {
-            "attack": [
-                "shots_on_target_per90", 
-                "shots_on_target_pct",
-                "goals_per_shot_on_target",
-                "into_penalty_area",
-                "pct_touches_att_pen_area",
-                "xg_per90",
-                "average_shot_distance",
-                ],
-            "defense": [
-                "clearances",
-                "blocked_passes",
-                "blocked_shots",
-                "dribble_tackles_pct",
-                "tackles_interceptions",
-                "errors",
-                "miscontrols"
-            ],
-            "possession": [
-                "passes_pct_short",
-                "passes_pct_medium",
-                "passes_pct_long",
-                "passes_total_distance",
-                "aerials_won_pct",
-                "dispossessed"
-            ]
-        }
-
-        self.columns = []
-        for category_columns in self.categories.values():
-            self.columns += category_columns
     
-    def _read_file(self, path : str = "data-used.csv") -> None:
+    def _read_file(self, path) -> None:
+        
+        # Read in data
         self.df = pd.read_csv(path, index_col=0)
+
+        print(self.df)
 
         # read in teams
         self.teams = list(set(self.df['team']))
@@ -62,10 +31,10 @@ class ViolinPlots:
         Automatically scales with numer of teams.
         """    
         # split in other countries and selected countries
-        df_compare = self.df.loc[self.df["team"].isin(teams_to_compare)].set_index("team")
-        df_others = self.df.loc[~self.df["team"].isin(teams_to_compare)].drop("team", axis=1)
+        df_compare = self.df.loc[self.df["team"].isin(teams_to_compare), features].set_index("team")
+        df_others = self.df.loc[~self.df["team"].isin(teams_to_compare), features].drop("team", axis=1)
 
-        # order by mean values
+        # order by mean values (desc)
         df_others = df_others.reindex(df_others.mean().sort_values().index[::-1], axis=1)
 
         # select colors for teams
@@ -78,7 +47,8 @@ class ViolinPlots:
         fig = go.Figure()
 
         for idx, feature in enumerate(df_others.columns):
-
+            
+            # plot violin plots of the distribution of other teams
             fig.add_trace(go.Violin(x=[feature for x in range(df_others.shape[0])],
                                     y=df_others[feature],
                                     name=feature,
@@ -87,6 +57,9 @@ class ViolinPlots:
                                     marker_color=color_others,
                                     showlegend=False))
             
+            # add markers (for now circles) for teams to compare.
+            # Only show the legend for the first circle, otherwise the
+            # legend will be repeated for the number of features.
             for color, team in zip(color_compare, teams_to_compare):    
                 fig.add_trace(go.Scatter(x=[feature], 
                                         y=[df_compare.loc[team, feature]], 
