@@ -1,5 +1,7 @@
 from dash import dcc, html
 import pandas as pd
+import dash_extensions as de
+import folium
 
 df = pd.read_csv('json_teamsmapped.csv', delimiter=',')
 teams = sorted(df['team'].tolist())
@@ -19,17 +21,30 @@ def generate_description_card():
         ],
     )
 
-def generate_dropdown():
+def generate_dropdown_opponent():
     return html.Div(
         children=[
-            html.Label("Select a team"),
-            dcc.Dropdown(id='dropdown_country',
+            html.Label("Select opponent"),
+            dcc.Dropdown(id='dropdown_opponent',
                  options=[{'label': team, 'value': team} for team in teams],
                  multi=False,
                  value=None),
 
         ]
     )
+
+def generate_dropdown_team():
+    return html.Div(
+        children=[
+            html.Label("Select your own team"),
+            dcc.Dropdown(id='dropdown_own_team',
+                         options=[{'label': team, 'value': team} for team in teams],
+                         multi=False,
+                         value=None),
+
+        ]
+    )
+
 def generate_control_card():
     """
 
@@ -54,4 +69,4 @@ def generate_control_card():
 
 
 def make_menu_layout():
-    return [generate_description_card(), generate_control_card(), generate_dropdown()]
+    return [generate_description_card(), generate_control_card(), generate_dropdown_opponent()]

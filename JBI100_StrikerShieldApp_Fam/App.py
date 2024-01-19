@@ -5,7 +5,7 @@ from dash_extensions.javascript import assign
 import pandas as pd
 import json
 from JBI100_StrikerShieldApp.Assets_app.Menu_app import make_menu_layout
-from JBI100_StrikerShieldApp.Assets_app.Worldmap import generate_map
+from JBI100_StrikerShieldApp.Assets_app.Worldmap import generate_map, calculate_center,geojson_layer
 
 # Define the style for the hovering menu
 menu_style = {
@@ -20,7 +20,6 @@ menu_style = {
     'zIndex': '1000',  # Ensure it sits on top of other elements
     'overflow': 'auto'  # Add scroll for overflow content
 }
-
 
 map_style = {
     'width': '100%',  # Map width is 100% of its container
@@ -59,46 +58,32 @@ def update_geojson_style(selected_range):
     min_rank, max_rank = selected_range
     return {"min_rank": min_rank, "max_rank": max_rank}
 
+
 @app.callback(
-    Output("map", "center"),
-    Output("map", "zoom"),
-    [Input('dropdown_country', 'value')]
+    [Output("map", "center"),
+     Output("map", "zoom"),
+     Output("map", "children")],  # Update this to change the map's children
+    [Input('dropdown_opponent', 'value')]
 )
 def update_map_on_team_select(selected_team):
-    default_zoom = 2  # Default zoom level
-    default_center = [20, 0]  # Default map center, adjust as needed
+    default_zoom = 2
+    default_center = [20, 0]
+    map_children = [dl.TileLayer(), geojson_layer]  # Include default layers
+
     if selected_team is None:
-        return default_center, default_zoom
-    if selected_team:
-        selected_country = team_to_country.get(selected_team)
-        if selected_country:
-            for feature in geojson_data['features']:
-                if feature['properties']['ADMIN'] == selected_country:
-                    # Calculate the center of the country
-                    # This is a placeholder, you'll need a function to calculate this based on the geometry
-                    country_center = calculate_center(feature['geometry'])
-                    new_zoom = 5  # Set a new zoom level to zoom in on the country
-                    return country_center, new_zoom
+        return default_center, default_zoom, map_children
 
+    selected_country = team_to_country.get(selected_team, None)
+    if selected_country:
+        for feature in geojson_data['features']:
+            if feature['properties']['ADMIN'] == selected_country:
+                country_center = calculate_center(feature['geometry'])
+                new_zoom = 5
+                marker = dl.Marker(position=country_center, children=dl.Tooltip(selected_country))
+                map_children.append(marker)  # Add the marker to children
+                return country_center, new_zoom, map_children
 
-
-def calculate_center(geometry):
-    if geometry['type'] == 'Polygon':
-        return calculate_polygon_centroid(geometry['coordinates'][0])
-    elif geometry['type'] == 'MultiPolygon':
-        # For MultiPolygons, calculate the centroid of each polygon and average them
-        centroids = [calculate_polygon_centroid(polygon[0]) for polygon in geometry['coordinates']]
-        return [sum(x) / len(centroids) for x in zip(*centroids)]
-    return [20, 0]  # Default in case of an unsupported geometry type
-
-def calculate_polygon_centroid(coords):
-    # Averaging latitude and longitude
-    lat = [p[1] for p in coords]
-    lon = [p[0] for p in coords]
-    centroid_lat = sum(lat) / len(lat)
-    centroid_lon = sum(lon) / len(lon)
-    return [centroid_lat, centroid_lon]
-
+    return default_center, default_zoom, map_children
 
 if __name__ == '__main__':
     app.run_server(debug=True)
