@@ -7,7 +7,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 import plotly
 import plotly.express as px
+from plotly.subplots import make_subplots
 import plotly.graph_objs as go
+import scipy.stats as stats
 
 def get_cats():
     return {'defense': ["clearances",
@@ -112,28 +114,41 @@ def corr_plots(idx):
 
     df_team_data = pd.read_csv(r'Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
     df_historic_fifa_ranking = pd.read_csv(r'Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv', delimiter=',')
-    cat = cats[idx]
+
+    # Map the ranks to the team data
     rank_mapping = df_historic_fifa_ranking.set_index('team')['rank'].to_dict()
-    df_team_data['rank'] = df_team_data['team'].map(rank_mapping)*-1
-    numerical_df = df_team_data[cat].select_dtypes(include=['number'])
-    scaler = StandardScaler()
-    normalized_df = pd.DataFrame(scaler.fit_transform(numerical_df), columns=numerical_df.columns)
-    correlations = numerical_df.drop('rank', axis=1).corrwith(numerical_df['rank'])
-    cat.remove('rank')
-    sorted_corrs = correlations[cat].sort_values(ascending=False)
-    fig = go.Figure(data=[
-        go.Bar(x=sorted_corrs.index, y=sorted_corrs, marker_color='blue')
-    ])
-    name_feat = list_features[idx]
-    fig.update_layout(
-        xaxis=dict(tickangle=-45),
-        xaxis_title='Features',
-        yaxis_title='Correlation',
-        margin=dict(l=20, r=20, t=20, b=20)
-    )
+    df_team_data['rank'] = df_team_data['team'].map(rank_mapping)
 
-    return fig 
+    # Select the category based on idx and remove 'rank' if it is not used as y-axis
+    selected_features = [f for f in cats[idx] if f != 'rank']
 
+    # Create subplot titles
+    subplot_titles = [f"{feature} vs FIFA Rank" for feature in selected_features]
+
+    # Create subplots with titles
+    num_plots = len(subplot_titles)
+    fig = make_subplots(rows=num_plots, cols=1, subplot_titles=subplot_titles)
+
+    for i, feature in enumerate(selected_features, 1):
+        # Clean data: remove rows where either feature or 'rank' is NaN
+        clean_data = df_team_data[[feature, 'rank']].dropna()
+
+        # Calculate correlation coefficient
+        correlation = clean_data.corr().iloc[0, 1]
+        subplot_title = f"{feature} vs FIFA Rank (Correlation: {correlation:.2f})"
+
+        # Add scatter trace for each feature
+        fig.add_trace(go.Scatter(x=clean_data[feature], y=clean_data['rank'], mode='markers', name=feature), row=i, col=1)
+
+        # Update subplot title with correlation
+        fig['layout']['annotations'][i-1]['text'] = subplot_title
+
+        # Add x and y axis titles
+        fig.update_xaxes(title_text=feature, row=i, col=1)
+        fig.update_yaxes(title_text="FIFA Rank", row=i, col=1)
+
+    fig.update_layout(height=300 * num_plots, width=800)
+    return fig
 def figure_pa(attributes: list[str], *teams_to_compare: list[str]) -> plotly.graph_objs.Figure:
     df_filtered = create_merged_df()
     scaler = MinMaxScaler()
