@@ -1,7 +1,11 @@
 from jbi100_app.main import app
 from jbi100_app.views.parallel_charts_adapted import ViolinPlots
 
-from dash import html, dcc
+from dash import html, dcc, Dash
+
+import dash_bootstrap_components as dbc
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
 # Initialize necessary components for dash graphing
 vp = ViolinPlots(path=r"C:\Users\ljpsm\OneDrive\kopie van afbeeldingen en documenten\Documenten\MotivationGPT\Visualization-JBI100\data-used.csv")
@@ -38,24 +42,38 @@ teams = [
 ]
 
 if __name__ == '__main__':
-    
-    app.layout = html.Div(
-        id="app-container",
-        children=[
-            # Right column
-            html.Div(
-                id="right-column",
-                className="nine columns",
-                children=[
-                    dcc.Graph(id='violin-plot', 
-                              figure = vp.figure(
-                                features, 
-                                teams
-                              ),
-                              style={'height': '90vh'}
-                    )]
-            ),
-        ],
-    )
 
+    app.layout = dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-family': 'verdana'}, fluid=True, children=[
+
+        # Title
+        dbc.Row(dbc.Col(html.H1("StrikerShield", className='text-center my-4 text-white'), width=14, style= {'font-family': 'Broadway', 'marginTop': '5px'})),
+
+        # Buttons to select teams and features
+        dbc.Row([
+            # Select team button
+            dbc.Col(dbc.Button('Browse teams', id='team-button', color="warning", n_clicks=0, style = {'background-color': 'darkgreen', 'border-color': 'darkgreen', 'float': 'right'})),
+            # Select feature button
+            dbc.Col(dbc.Button('Browse features', id='feature-button', color="warning", n_clicks=0, style = {'background-color': 'darkgreen', 'border-color': 'darkgreen'})),
+        ]),
+
+        # Extra space between buttons and feature
+        html.Br(),
+
+        # Violin plots
+        dbc.Row(html.Div(id="right-column",
+                         className="nine columns",
+                         children=[
+                            dcc.Graph(id='violin-plot', 
+                                      figure = vp.figure(
+                                        features, 
+                                        teams
+                                      ),
+                                      style={'height': '75vh'})
+                          ]))
+
+        ])
+    
     app.run_server(debug=False, dev_tools_ui=True)
+
+
+# Feature pop-up

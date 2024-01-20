@@ -1,14 +1,8 @@
 # Import libraries
-import os
-
-import numpy as np
 import pandas as pd
 
 import plotly
-import plotly.express as px
 import plotly.graph_objs as go
-
-from dash import html, dcc
 
 class ViolinPlots:
 
@@ -20,8 +14,6 @@ class ViolinPlots:
         
         # Read in data
         self.df = pd.read_csv(path, index_col=0)
-
-        print(self.df)
 
         # read in teams
         self.teams = list(set(self.df['team']))
