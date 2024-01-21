@@ -3,9 +3,14 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
-from helperFunctionsArletteV2 import corr_plots, create_merged_df, figure_pa, get_cats
+from helperFunctionsArletteV2 import corr_plots, create_merged_df,  get_cats #, figure_pa
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+from jbi100_app.views.parallel_charts_adapted import ViolinPlots
+import plotly.express as px
+
+violin_data = pd.read_csv(r"C:\Users\Beheerder\Documents\DSAI master\Q2 Courses\Vizualisation\Visualization-JBI100\data-used.csv")
+vp = ViolinPlots(path=r"C:\Users\Beheerder\Documents\DSAI master\Q2 Courses\Vizualisation\Visualization-JBI100\data-used.csv")
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
@@ -16,14 +21,6 @@ feat_columns = []
 for category_columns in feat_cats.values():
         feat_columns += category_columns
 
-selected_country ='Argentina'
-selected_opp = 'Senegal'
-matchesNr1 = 10
-matchesNr2 = 20
-glob_select = ['France', 'Ecuador', 'Engeland', 'Croatia', 'Morocco']
-default_check = ["average_shot_distance", "blocked_passes", "aerials_won_pct", "errors"]
-rank_low = 1
-rank_high = 5
 
 def create_modal():
     return dbc.Modal(
@@ -40,18 +37,7 @@ app.layout = dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-fam
     create_modal(),
     dbc.Row(dbc.Col(html.H1("StrikerShield", className='text-center my-4 text-white'), width=14, style= {'font-family': 'Broadway', 'marginTop': '30px'})),
 
-    dbc.Row([
-    dbc.Col(html.Div([
-        html.Span("●", className='text-danger', style={'fontSize': '1.5em'}),
-        html.Span(f"{selected_country}: ", className='text-light'),
-        html.Span(f"Data from {matchesNr1} matches", className='text-light'), 
-    ], className='text-center py-2')),
     
-    dbc.Col(html.Div([
-        html.Span("●", className='text-primary', style={'fontSize': '1.5em'}),
-        html.Span(f"{selected_opp}: ", className='text-light'),
-        html.Span(f"Data from {matchesNr2} matches", className='text-light'), 
-    ], className='text-center py-2')),], className='my-1', justify='center', style={'marginTop': '5px'}),
 
     dbc.Row([
         dbc.Col(dbc.Card([
@@ -65,15 +51,42 @@ app.layout = dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-fam
                 dbc.Row([
                     dbc.Button("Feature-rank correlations", id="open-modal-btn", color='secondary', className="me-1", n_clicks=0)]),
                     html.Hr(className='bg-light'),
-                html.H2('Compare Feature', className='text-white', style={'fontSize': '1.5em'}),
-                dcc.Dropdown(id='feature_dd', options=[{'label': feat, 'value': feat} for feat in feat_columns], style={'color': 'black'}, value='blocked_passes'),
+                html.H2('Select Feature(s)', className='text-white', style={'fontSize': '1.5em'}),
+                dcc.Dropdown(id='feature_dd', options=[{'label': feat, 'value': feat} for feat in feat_columns], style={'color': 'black'}, value='blocked_passes', multi= True), 
+                html.H2('Select Countries', className='text-white', style={'fontSize': '1.5em'}),
+                
+            dcc.Dropdown(
+            id='country-select-dropdown',
+            options=[{'label': country, 'value': country} for country in df_merge['team'].unique()],
+            multi=True,  # Allows multiple selections
+            style={'color': 'black', 'background-color': 'white'}
+        ), html.H2('Normalize Data', className='text-white', style={'fontSize': '1.5em'}),
+dbc.Checklist(
+    options=[
+        {"label": "Normalize", "value": 1}
+    ],
+    value=[],
+    id="normalize-toggle",
+    switch=True,
+)
             ])
         ], color="dark"), width=4),
         dbc.Col(dcc.Graph(id='plot'), id='plot_con'),
     ]),
 
     dbc.Row([
-        dbc.Col(html.Div(style={'height': '40px'}))]),
+        dbc.Col([
+            html.Label('Select Country', className='text-white'),
+            dcc.Dropdown(
+    id='country-dropdown',
+    options=[{'label': country, 'value': country} for country in df_merge['team'].unique()],
+    value=[],
+    multi=True,  # Allows multiple selections
+    style={'color': 'black', 'background-color': 'white'}  # Set text color to black and dropdown background to white
+)
+
+        ], width=6)
+    ]),
 
     dbc.Row([
             
@@ -82,14 +95,15 @@ app.layout = dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-fam
             dbc.CardBody([
                 dcc.Checklist(
                     id='pa-feature-checklist',
-                    options=[{'label': feat, 'value': feat} for feat in default_check],
-                    value=default_check,
+                    options=[{'label': col, 'value': col} for col in violin_data.columns],
+                    value=[],
                     labelStyle={'display': 'block', 'color': '#fff'}
                 ),
                 dbc.Button('Remove all', id='reset-button', color="warning", n_clicks=0)
             ])
         ], color="dark"), width=4),
         dbc.Col(dcc.Graph(id='pa-plot'), id='pa-plot-container')
+        
     ])
 ])
 
@@ -127,62 +141,118 @@ def update_graph(btn1, btn2, btn3, existing_figure):
 @app.callback(
     [Output('pa-plot', 'figure'),
      Output('pa-plot', 'style'),
-    Output('pa-plot-container', 'style')],
+     Output('pa-plot-container', 'style')],
     [Input('pa-feature-checklist', 'value'),
-     Input('feature_dd', 'value')])
-def update_pa_plot(selected_features, dropdownFeature):
-    if dropdownFeature and selected_features:
-        fig = figure_pa(selected_features, selected_country, selected_opp)  
-        fig.update_layout(
-            font=dict(size=14),
-            margin=dict(l=75, r=75, t=50, b=20)
-        ) 
-        return fig, {'height': '220px', 'width':'800px'}, {'display': 'block'}
-    else:
-        return go.Figure(), {}, {'display': 'none'}
+     Input('country-dropdown', 'value')])
+def update_pa_plot(selected_features, selected_countries):
+    if not selected_features or not selected_countries:
+        # If no feature or country is selected, do not update the plot
+        raise PreventUpdate
 
-@app.callback(
-    Output('pa-feature-checklist', 'value'),
-    [Input('reset-button', 'n_clicks')])
-def reset_checklist(n_clicks):
-    return [] if n_clicks > 0 else dash.no_update
+    # Filter the dataframe for the selected countries
+    filtered_data = violin_data[violin_data['team'].isin(selected_countries)]
 
-@app.callback(
-    [Output('pa-feature-checklist', 'options'),
-     Output('pa-feature-checklist', 'labelStyle')],
-    [Input('feature_dd', 'value')],
-    [State('pa-feature-checklist', 'options')])
-def update_feature_checklist(selected_feature, existing_options):
-    if selected_feature:
-        if not any(option['value'] == selected_feature for option in existing_options):
-            existing_options.append({'label': selected_feature, 'value': selected_feature})
-        return existing_options, {'display': 'block'}
-    else:
-        return existing_options, {'display': 'none'}
+    # Create dimensions for each selected feature with the range set to [0, 1]
+    dimensions = [
+        {
+            'label': feature,
+            'values': filtered_data[feature],
+            'range': [0, 1]  # Set the range from 0 to 1 for each feature
+        } for feature in selected_features
+    ]
+
+    # Create the parallel coordinates plot
+    fig = go.Figure(data=go.Parcoords(
+        line=dict(color=filtered_data['team'].astype('category').cat.codes, colorscale='Viridis'),
+        dimensions=dimensions,
+        
+        
+        
+    ))
+
+    # Update layout properties
+    fig.update_layout(
+    title_text='Parallel Coordinates Plot for Selected Features and Countries',
+    margin=dict(l=50, r=50, t=50, b=50),
+    
+    font=dict(size=12),
+    paper_bgcolor='white',  # Change paper background color to white
+    plot_bgcolor='white',   # Change plot background color to white
+    font_color='black'      # Ensure the font color is black for readability
+)
+
+
+    return [fig, {'display': 'block'}, {'display': 'block', 'width': '100%'}]
+# Define a color dictionary outside of the callback
+country_colors = {country: color for country, color in zip(df_merge['team'].unique(), px.colors.qualitative.Plotly)}
+
 
 @app.callback(
     [Output('plot', 'figure'),
      Output('plot', 'style'),
      Output('plot_con', 'style')],
-    [Input('feature_dd', 'value'),]
+    [Input('feature_dd', 'value'),
+     Input('country-select-dropdown', 'value'),
+     Input('normalize-toggle', 'value')]
 )
-def update_plot(selected_feature):
-    if selected_feature:
-        fig = go.Figure()
-        fig.add_trace(go.Box(y=df_merge[selected_feature], name='Global', marker=dict(color='darkgreen', size=12)))
-        df_globSel = df_merge[df_merge['team'].isin(glob_select)]
-        fig.add_trace(go.Box(y=df_globSel[selected_feature], name=(f'Countries with FIFA ranking {rank_low}-{rank_high}'), marker=dict(color='purple', size=12)))
-        valAnno = df_merge[df_merge['team'] == selected_country][selected_feature].values[0]
-        fig.add_trace(go.Scatter(x=['Country'], y=[valAnno], mode='markers', marker=dict(color='red', size=12), name=selected_country))
-        valAnno = df_merge[df_merge['team'] == selected_opp][selected_feature].values[0]
-        fig.add_trace(go.Scatter(x=['Country'], y=[valAnno], mode='markers', marker=dict(color='blue', size=12), name=selected_opp))
-        fig.update_layout(showlegend=False,
-            margin=dict(l=10, r=10, t=10, b=10))
-        return fig, {'height': '300px', 'width':'800px'}, {'display': 'block'}
-    else:
-        return go.Figure(), {}, {'display': 'none'}
-    
-            
+def update_violin_plot_with_countries(selected_features, selected_countries, normalize):
+    # Normalize data if toggle is on
+    normalize_data = 1 in normalize
+
+    if not isinstance(selected_features, list):
+        selected_features = [selected_features]
+
+    fig = go.Figure()
+
+    for feature in selected_features:
+        if feature in df_merge.columns:
+            data = df_merge[feature]
+            if normalize_data:
+                # Normalize data by centering around 0
+                mean = data.mean()
+                normalized_data = data - mean
+            else:
+                normalized_data = data
+
+            fig.add_trace(go.Violin(
+                y=normalized_data,
+                name=feature,
+                line_color='black',
+                fillcolor='grey',
+                box_visible=True,
+                meanline_visible=True
+            ))
+
+    # Add markers for the selected countries for each feature, if any countries are selected
+    if selected_countries:
+        for country in selected_countries:
+            country_color = country_colors.get(country, 'black')
+            for feature in selected_features:
+                country_data = df_merge[df_merge['team'] == country]
+                if feature in country_data.columns:
+                    data = country_data[feature]
+                    if normalize_data:
+                        # Normalize the country-specific data in the same way as the violin plots
+                        data = data - df_merge[feature].mean()
+
+                    fig.add_trace(go.Scatter(
+                        x=[feature] * len(country_data),
+                        y=data,
+                        mode='markers',
+                        marker=dict(color=country_color, size=10),
+                        name=f"{country} - {feature}"
+                    ))
+
+    fig.update_layout(
+        title_text='Violin Plots for Selected Features and Countries',
+        showlegend=True,
+        margin=dict(l=10, r=10, t=50, b=10),  # Increase top margin to fit the title
+        height=450,  # Increase the height of the plot
+        width=950   # Increase the width of the plot
+    )
+
+    return fig, {'height': '300px', 'width': '800px'}, {'display': 'block'}
+
 @app.callback(
     [Output('btn-1', 'style'),
      Output('btn-2', 'style'),
@@ -218,7 +288,7 @@ def update_button_styles(btn1, btn2, btn3):
             return [default_style, default_style, selected_style, options]
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port = 8000)
 
 
 
