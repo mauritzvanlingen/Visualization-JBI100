@@ -52,59 +52,31 @@ app.layout = dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-fam
                     dbc.Button("Feature-rank correlations", id="open-modal-btn", color='secondary', className="me-1", n_clicks=0)]),
                     html.Hr(className='bg-light'),
                 html.H2('Select Feature(s)', className='text-white', style={'fontSize': '1.5em'}),
-                dcc.Dropdown(id='feature_dd', options=[{'label': feat, 'value': feat} for feat in feat_columns], style={'color': 'black'}, value='blocked_passes', multi= True), 
+                dcc.Dropdown(id='feature_dd', options=[{'label': feat, 'value': feat} for feat in feat_columns], style={'color': 'black'}, multi= True), 
                 html.H2('Select Countries', className='text-white', style={'fontSize': '1.5em'}),
                 
             dcc.Dropdown(
             id='country-select-dropdown',
             options=[{'label': country, 'value': country} for country in df_merge['team'].unique()],
             multi=True,  # Allows multiple selections
-            style={'color': 'black', 'background-color': 'white'}
-        ), html.H2('Normalize Data', className='text-white', style={'fontSize': '1.5em'}),
+            style={'color': 'black', 'background-color': 'white'},
+            value= "Argentina"
+        ), html.H2('Undo normalization', className='text-white', style={'fontSize': '1.5em'}),
 dbc.Checklist(
-    options=[
-        {"label": "Normalize", "value": 1}
-    ],
-    value=[],
-    id="normalize-toggle",
-    switch=True,
-)
+        options=[
+            {"label": "", "value": 1}
+        ],
+        value=[],
+        id="normalize-toggle",
+        switch=True,
+    ),
+    html.Div(id='normalize-label', children='Using Normalized Data', className='text-white'),
             ])
         ], color="dark"), width=4),
         dbc.Col(dcc.Graph(id='plot'), id='plot_con'),
     ]),
 
-    dbc.Row([
-        dbc.Col([
-            html.Label('Select Country', className='text-white'),
-            dcc.Dropdown(
-    id='country-dropdown',
-    options=[{'label': country, 'value': country} for country in df_merge['team'].unique()],
-    value=[],
-    multi=True,  # Allows multiple selections
-    style={'color': 'black', 'background-color': 'white'}  # Set text color to black and dropdown background to white
-)
-
-        ], width=6)
-    ]),
-
-    dbc.Row([
-            
-            dbc.Col(dbc.Card([
-            dbc.CardHeader(html.H2("Summarize", className='text-white', style={'fontSize': '1.5em'})),
-            dbc.CardBody([
-                dcc.Checklist(
-                    id='pa-feature-checklist',
-                    options=[{'label': col, 'value': col} for col in violin_data.columns],
-                    value=[],
-                    labelStyle={'display': 'block', 'color': '#fff'}
-                ),
-                dbc.Button('Remove all', id='reset-button', color="warning", n_clicks=0)
-            ])
-        ], color="dark"), width=4),
-        dbc.Col(dcc.Graph(id='pa-plot'), id='pa-plot-container')
-        
-    ])
+ 
 ])
 
 @app.callback(
@@ -138,51 +110,6 @@ def update_graph(btn1, btn2, btn3, existing_figure):
 
     return existing_figure
 
-@app.callback(
-    [Output('pa-plot', 'figure'),
-     Output('pa-plot', 'style'),
-     Output('pa-plot-container', 'style')],
-    [Input('pa-feature-checklist', 'value'),
-     Input('country-dropdown', 'value')])
-def update_pa_plot(selected_features, selected_countries):
-    if not selected_features or not selected_countries:
-        # If no feature or country is selected, do not update the plot
-        raise PreventUpdate
-
-    # Filter the dataframe for the selected countries
-    filtered_data = violin_data[violin_data['team'].isin(selected_countries)]
-
-    # Create dimensions for each selected feature with the range set to [0, 1]
-    dimensions = [
-        {
-            'label': feature,
-            'values': filtered_data[feature],
-            'range': [0, 1]  # Set the range from 0 to 1 for each feature
-        } for feature in selected_features
-    ]
-
-    # Create the parallel coordinates plot
-    fig = go.Figure(data=go.Parcoords(
-        line=dict(color=filtered_data['team'].astype('category').cat.codes, colorscale='Viridis'),
-        dimensions=dimensions,
-        
-        
-        
-    ))
-
-    # Update layout properties
-    fig.update_layout(
-    title_text='Parallel Coordinates Plot for Selected Features and Countries',
-    margin=dict(l=50, r=50, t=50, b=50),
-    
-    font=dict(size=12),
-    paper_bgcolor='white',  # Change paper background color to white
-    plot_bgcolor='white',   # Change plot background color to white
-    font_color='black'      # Ensure the font color is black for readability
-)
-
-
-    return [fig, {'display': 'block'}, {'display': 'block', 'width': '100%'}]
 # Define a color dictionary outside of the callback
 country_colors = {country: color for country, color in zip(df_merge['team'].unique(), px.colors.qualitative.Plotly)}
 
@@ -196,63 +123,110 @@ country_colors = {country: color for country, color in zip(df_merge['team'].uniq
      Input('normalize-toggle', 'value')]
 )
 def update_violin_plot_with_countries(selected_features, selected_countries, normalize):
-    # Normalize data if toggle is on
-    normalize_data = 1 in normalize
+    # Correctly set the normalization flag based on the toggle
+    use_normalized_data = not (1 in normalize)
 
-    if not isinstance(selected_features, list):
-        selected_features = [selected_features]
-
+    # Initialize figure
     fig = go.Figure()
 
-    for feature in selected_features:
-        if feature in df_merge.columns:
-            data = df_merge[feature]
-            if normalize_data:
-                # Normalize data by centering around 0
-                mean = data.mean()
-                normalized_data = data - mean
-            else:
-                normalized_data = data
+    # Check if at least one feature is selected
+    if not selected_features:
+        # Provide a default empty figure layout if no features are selected
+        fig.update_layout(
+            title_text='Please select at least one feature to visualize.',
+            xaxis={'visible': False},
+            yaxis={'visible': False},
+            annotations=[{
+                'text': 'No features selected',
+                'xref': 'paper',
+                'yref': 'paper',
+                'showarrow': False,
+                'font': {'size': 28}
+            }]
+        )
+    else:
+        # Ensure selected_features is a list for consistent processing
+        if not isinstance(selected_features, list):
+            selected_features = [selected_features]
 
+        # Process each feature to create the corresponding violin plot
+        for feature in selected_features:
+            # Obtain the data for the feature
+            data = df_merge[feature]
+            if use_normalized_data:
+                # Apply normalization to the data
+                mean = data.mean()
+                std_dev = data.std()
+                data = (data - mean) / std_dev
+
+            # Add the violin plot for the feature
             fig.add_trace(go.Violin(
-                y=normalized_data,
+                y=data,
                 name=feature,
                 line_color='black',
                 fillcolor='grey',
                 box_visible=True,
-                meanline_visible=True
+                meanline_visible=True,
+                showlegend=False  # Optionally hide the legend for each violin
             ))
 
-    # Add markers for the selected countries for each feature, if any countries are selected
-    if selected_countries:
-        for country in selected_countries:
-            country_color = country_colors.get(country, 'black')
-            for feature in selected_features:
-                country_data = df_merge[df_merge['team'] == country]
-                if feature in country_data.columns:
-                    data = country_data[feature]
-                    if normalize_data:
-                        # Normalize the country-specific data in the same way as the violin plots
-                        data = data - df_merge[feature].mean()
+        # Initialize a dictionary to keep track of whether a country's legend item has been added
+        country_legend_added = {country: False for country in selected_countries}
 
+        # Process selected countries to add their data points to the plot
+        if selected_countries:
+            for country in selected_countries:
+                country_color = country_colors.get(country, 'black')
+                for feature in selected_features:
+                    country_data = df_merge[df_merge['team'] == country][feature]
+                    # Normalize country-specific data if the toggle is on
+                    if use_normalized_data:
+                        country_data = (country_data - df_merge[feature].mean()) / df_merge[feature].std()
+
+                    # Check if the legend item has already been added for this country
+                    showlegend = not country_legend_added[country]
+
+                    # Add scatter plot for the country data points
                     fig.add_trace(go.Scatter(
                         x=[feature] * len(country_data),
-                        y=data,
+                        y=country_data,
                         mode='markers',
                         marker=dict(color=country_color, size=10),
-                        name=f"{country} - {feature}"
+                        name=country if showlegend else '',  # Only add country name for legend if not already added
+                        legendgroup=country,  # Group all markers of the same country
+                        showlegend=showlegend  # Only show legend item once per country
                     ))
 
-    fig.update_layout(
-        title_text='Violin Plots for Selected Features and Countries',
-        showlegend=True,
-        margin=dict(l=10, r=10, t=50, b=10),  # Increase top margin to fit the title
-        height=450,  # Increase the height of the plot
-        width=950   # Increase the width of the plot
-    )
+                    # Mark this country's legend as added
+                    country_legend_added[country] = True
 
-    return fig, {'height': '300px', 'width': '800px'}, {'display': 'block'}
+        # Update the layout of the figure
+        fig.update_layout(
+            title_text='Violin Plots for Selected Features and Countries',
+            yaxis_title='Standard deviations from the mean' if use_normalized_data else 'Raw values',
+            showlegend=True,
+            margin=dict(l=10, r=10, t=50, b=10),
+            height=450,
+            width=950
+        )
 
+    return fig, {'display': 'block'}, {'display': 'block', 'width': '100%'}
+
+
+# Define a color dictionary outside of the callback
+country_colors = {country: color for country, color in zip(df_merge['team'].unique(), px.colors.qualitative.Plotly)}
+
+
+@app.callback(
+    Output('normalize-label', 'children'),
+    [Input('normalize-toggle', 'value')]
+)
+def update_normalize_label(normalize):
+    # Update the label based on the toggle state
+    if 1 in normalize:
+        return 'Using Raw Data'
+    else:
+        return 'Using Normalized Data'
 @app.callback(
     [Output('btn-1', 'style'),
      Output('btn-2', 'style'),
@@ -288,7 +262,7 @@ def update_button_styles(btn1, btn2, btn3):
             return [default_style, default_style, selected_style, options]
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port = 8000)
+    app.run_server(debug=True, port = 800)
 
 
 
