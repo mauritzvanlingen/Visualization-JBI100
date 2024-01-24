@@ -11,7 +11,6 @@ from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 import scipy.stats as stats
 from jbi100_app.views.parallel_charts_adapted import ViolinPlots
-vp = ViolinPlots(path=r"C:\Users\Beheerder\Documents\DSAI master\Q2 Courses\Vizualisation\Visualization-JBI100\data-used.csv")
 def get_cats():
     return {'defense': ["clearances",
                 "blocked_passes",
@@ -63,13 +62,13 @@ def create_merged_df():
                 "average_shot_distance",
                 ]
     
-    df_team = pd.read_csv(r'Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
-    df_fifa = pd.read_csv(r'Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv', delimiter=',')
+    df_team = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup 2022 Team Data/team_data.csv")
+    df_fifa = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
     # Merge dataframes and select features 
     merged_df = pd.merge(df_team, df_fifa, on='team')
     red_mer_df = merged_df[features].copy()
     red_mer_df = red_mer_df.set_index('team')
-    print(merged_df['team'])
+
 
     # Check NaN values, negative values and <3 matches played
 
@@ -113,8 +112,8 @@ def corr_plots(idx):
                 "average_shot_distance",
                 ]]
 
-    df_team_data = pd.read_csv(r'Data/FIFA World Cup 2022 Team Data/team_data.csv', delimiter=',')
-    df_historic_fifa_ranking = pd.read_csv(r'Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv', delimiter=',')
+    df_team_data = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup 2022 Team Data/team_data.csv")
+    df_historic_fifa_ranking = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
 
     # Map the ranks to the team data
     rank_mapping = df_historic_fifa_ranking.set_index('team')['points'].to_dict()

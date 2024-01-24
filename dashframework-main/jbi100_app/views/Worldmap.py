@@ -4,10 +4,10 @@ import json
 from dash_extensions.javascript import assign
 import dash_leaflet as dl
 
-df = pd.read_csv('dataset_teams.csv', delimiter=',')
+df = pd.read_csv('../Data/dataset_teams.csv')
 
 
-with open('modified_countries2.geojson', 'r') as f:
+with open('../Data/modified_countries2.geojson', 'r') as f:
     geojson_data = json.load(f)
 
 style_handle = assign("""function(feature, context){

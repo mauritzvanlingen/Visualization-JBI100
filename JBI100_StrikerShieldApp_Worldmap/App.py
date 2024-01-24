@@ -29,10 +29,10 @@ map_style = {
 }
 
 # Load the modified GeoJSON data
-df = pd.read_csv('dataset_teams.csv', delimiter=',')
+df = pd.read_csv('../Data/dataset_teams.csv', delimiter=',')
 team_to_country = df.set_index('team')['country'].to_dict()
 
-with open('modified_countries2.geojson', 'r') as f:
+with open('../Data/modified_countries2.geojson', 'r') as f:
     geojson_data = json.load(f)
 
 # Initialize Dash app
