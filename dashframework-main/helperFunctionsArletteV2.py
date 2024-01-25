@@ -62,8 +62,8 @@ def create_merged_df():
                 "average_shot_distance",
                 ]
     
-    df_team = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup 2022 Team Data/team_data.csv")
-    df_fifa = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
+    df_team = pd.read_csv("../Data/FIFA World Cup 2022 Team Data/team_data.csv")
+    df_fifa = pd.read_csv("../Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
     # Merge dataframes and select features 
     merged_df = pd.merge(df_team, df_fifa, on='team')
     red_mer_df = merged_df[features].copy()
@@ -112,8 +112,8 @@ def corr_plots(idx):
                 "average_shot_distance",
                 ]]
 
-    df_team_data = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup 2022 Team Data/team_data.csv")
-    df_historic_fifa_ranking = pd.read_csv("/Users/famkevanree/Desktop/Visualization-JBI100/Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
+    df_team_data = pd.read_csv("../Data/FIFA World Cup 2022 Team Data/team_data.csv")
+    df_historic_fifa_ranking = pd.read_csv("../Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
 
     # Map the ranks to the team data
     rank_mapping = df_historic_fifa_ranking.set_index('team')['points'].to_dict()
