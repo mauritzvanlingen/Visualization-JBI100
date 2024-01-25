@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 import json
 
-from jbi100_app.views.helperFunctionsApp import corr_plots, create_merged_df,  get_cats, get_descriptions
+from jbi100_app.views.helperFunctionsApp import corr_plots, create_merged_df,  get_cats, get_descriptions, get_labels
 from jbi100_app.views.Menu_app import make_menu_layout
 from jbi100_app.views.Worldmap import generate_map, calculate_center, geojson_layer
 
@@ -41,7 +41,7 @@ feat_cats = get_cats()
 
 feat_columns = []
 for category_columns in feat_cats.values():
-        feat_columns += category_columns
+    feat_columns += category_columns
 feat_columns = list(set(feat_columns)) 
 feature_descriptions = {}
 for item in feat_columns:
@@ -66,6 +66,8 @@ country_colors = {country: color for country, color in zip(df_merge['team'].uniq
 
 with open('../Data/modified_countries2.geojson', 'r') as f:
     geojson_data = json.load(f)
+
+
 def create_modal():
     return dbc.Modal(
         [
@@ -77,63 +79,87 @@ def create_modal():
         is_open=False  
     )
 
+
 app.layout = (
-    dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-family': 'verdana'}, fluid=True, children=[
-    create_modal(),
-    dbc.Row(dbc.Col(html.H1("StrikerShield", className='text-center my-4 text-white'), width=14, style= {'font-family': 'Broadway', 'marginTop': '30px'})),
+    dbc.Container(
+        style={'width': '80%', 'margin': '0 auto',  'font-family': 'verdana'},
+        fluid=True,
+        children=[create_modal(),
+            dbc.Row(
+                dbc.Col(
+                    html.H1("StrikerShield", className='text-center my-4 text-white'),
+                    width=14,
+                    style={'font-family': 'Broadway', 'marginTop': '30px'}
+                )),
 
-    dbc.Row([
-        dbc.Col(dbc.Card([
-            dbc.CardHeader(html.H2("Explore Category", className='text-white', style={'fontSize': '1.5em'})),
-            dbc.CardBody([
-                dbc.Button('Defense', id='btn-1', color="secondary", className="me-1", n_clicks=0, style = {'background-color': 'darkgreen'}),
-                dbc.Button('Possession', id='btn-2', color="secondary", className="me-1", n_clicks=0),
-                
-                dbc.Button('Attack', id='btn-3', color="secondary", className="me-1", n_clicks=0),
-                html.Hr(className='bg-light'),
-                    dbc.Row([
-                    dbc.Button("Feature-rank correlations", id="open-modal-btn", color='secondary', className="me-1", n_clicks=0)]),
-                    html.Hr(className='bg-light'),
-                html.H2('Select Feature(s)', className='text-white', style={'fontSize': '1.5em'}),
-                dcc.Dropdown(id='feature_dd', options=[{'label': feat, 'value': feat} for feat in feat_columns], style={'color': 'black'}, multi= True), 
-                html.H2('Undo normalization', className='text-white', style={'fontSize': '1.5em'}),
-        dbc.Checklist(
-        options=[
-            {"label": "", "value": 1}
-        ],
-        value=[],
-        id="normalize-toggle",
-        switch=True,
-    ),
-    html.Div(id='normalize-label', children='Using Normalized Data', className='text-white'),
-            ])
-        ], color="dark"), width=4),
-        dbc.Col(dcc.Graph(id='plot'), id='plot_con'),
+            dbc.Row([dbc.Col(
+                            dbc.Card(
+                        [
+                                dbc.CardHeader(html.H2("Explore Category", className='text-white', style={'fontSize': '1.5em'})),
+                                dbc.CardBody([
+                                    dbc.Button('Defense',
+                                               id='btn-1',
+                                               color="secondary",
+                                               className="me-1",
+                                               n_clicks=0,
+                                               style={'background-color': 'darkgreen'}),
+                                    dbc.Button('Possession',
+                                               id='btn-2',
+                                               color="secondary",
+                                               className="me-1",
+                                               n_clicks=0),
+                                    dbc.Button('Attack',
+                                               id='btn-3',
+                                               color="secondary",
+                                               className="me-1",
+                                               n_clicks=0),
+                                    html.Hr(className='bg-light'),
+                                    dbc.Row([
+                                        dbc.Button("Feature-rank correlations", id="open-modal-btn", color='secondary', className="me-1", n_clicks=0)]),
+                                    html.Hr(className='bg-light'),
+                                    html.H2('Select Feature(s)', className='text-white', style={'fontSize': '1.5em'}),
+                                    dcc.Dropdown(id='feature_dd', options=[{'label': get_labels(feat), 'value': feat} for feat in feat_columns],
+                                                 style={'color': 'black'},
+                                                 multi= True),
+                                    html.H2('Undo normalization', className='text-white', style={'fontSize': '1.5em'}),
+                                    dbc.Checklist(options=[{"label": "", "value": 1}],
+                                                  value=[],
+                                                  id="normalize-toggle",
+                                                  switch=True, ),
+                                    html.Div(id='normalize-label', children='Using Normalized Data', className='text-white'),
+                                ])
+                                ],
+                            color="dark"),
+                            width=4
+                            ),
+                    dbc.Col(dcc.Graph(id='plot'), id='plot_con'),
 
-            html.Label("Select country"),
-            dcc.Dropdown(id='country-select-dropdown',
-                 options=[{'label': team, 'value': team} for team in sorted(df_merge['team'].unique())],
-                 style={'color': 'black','width':'50%'},
-                 multi=True,
-                 value=None),
-    ]),
+                    html.Label("Compare countries from filters in violin plots"),
+                    dcc.Dropdown(id='country-select-dropdown',
+                                 options=[{'label': team, 'value': team} for team in sorted(df_merge['team'].unique())],
+                                 style={'color': 'black','width':'50%'},
+                                 multi=True,
+                                 value=None),
+                    ]),
 
-    html.Br(style={"line-height": "5"}),
-    dbc.Row([
-        html.Div(
-            [
-                generate_map(),  # This creates the map component
-                html.Div(  # This creates the overlay menu
-                    id="overlay-menu",
-                    children=make_menu_layout(),
-                    style=menu_style,
+            html.Br(style={"line-height": "5"}),
+            dbc.Row([
+                html.Div(
+                    [
+                        generate_map(),  # This creates the map component
+                        html.Div(  # This creates the overlay menu
+                            id="overlay-menu",
+                            children=make_menu_layout(),
+                            style=menu_style,
+                        )
+                    ],
+                    style={'position': 'relative'}  # Needed for correct positioning of the overlay
                 )
-            ],
-            style={'position': 'relative'}  # Needed for correct positioning of the overlay
-        )
 
-    ]),
-]))
+            ]),
+        ]
+    )
+)
 
 
 @app.callback(
@@ -203,6 +229,7 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
         for feature in selected_features:
             # Obtain the data for the feature
             data = df_merge[feature]
+
             if use_normalized_data:
                 # Apply normalization to the data
                 # mean = data.mean()
@@ -218,7 +245,7 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
             # Add the violin plot for the feature
             fig.add_trace(go.Violin(
                 y=data,
-                name=feature,
+                name=get_labels(feature),
                 line_color='black',
                 fillcolor='grey',
                 box_visible=True,
@@ -228,7 +255,7 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
             ))
             desc = get_descriptions(feature)
             fig.add_annotation(
-            x=feature,
+            x=get_labels(feature),
             y=-0.12,
             xref='x',
             yref='paper',
@@ -314,7 +341,7 @@ def update_button_styles(btn1, btn2, btn3):
 
     if not ctx.triggered:
         list_feat = feat_cats["defense"]
-        options = [{'label': feat, 'value': feat} for feat in list_feat]
+        options = [{'label': get_labels(feat), 'value': feat} for feat in list_feat]
         return [{'background-color': 'darkgreen'}, {}, {}, options]
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -323,15 +350,15 @@ def update_button_styles(btn1, btn2, btn3):
 
         if button_id == 'btn-1':
             list_feat = feat_cats["defense"]
-            options = [{'label': feat, 'value': feat} for feat in list_feat]
+            options = [{'label': get_labels(feat), 'value': feat} for feat in list_feat]
             return [selected_style, default_style, default_style, options]
         elif button_id == 'btn-2':
             list_feat = feat_cats["possession"]
-            options = [{'label': feat, 'value': feat} for feat in list_feat]
+            options = [{'label': get_labels(feat), 'value': feat} for feat in list_feat]
             return [default_style, selected_style, default_style, options]
         elif button_id == 'btn-3':
             list_feat = feat_cats["attack"]
-            options = [{'label': feat, 'value': feat} for feat in list_feat]
+            options = [{'label': get_labels(feat), 'value': feat} for feat in list_feat]
             return [default_style, default_style, selected_style, options]
 
 @app.callback(
