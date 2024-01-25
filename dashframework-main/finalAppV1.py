@@ -9,26 +9,17 @@ import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
 import json
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import numpy as np
 
-from jbi100_app.views.helperFunctionsApp import corr_plots, create_merged_df,  get_cats, get_descriptions, get_labels
+from jbi100_app.views.helperFunctionsApp import corr_plots, create_merged_df,  get_cats, get_descriptions, get_labels, getFeatFromLabel
 from jbi100_app.views.Menu_app import make_menu_layout
-from jbi100_app.views.Worldmap import generate_map, calculate_center, geojson_layer
+from jbi100_app.views.WorldmapV2 import generate_map, geojson_layer, create_legend, get_country_from_latlng
+from geopy.geocoders import Nominatim
+import matplotlib.cm as cm
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
-
-# Define the style for the hovering menu
-menu_style = {
-    'position': 'absolute',  # Keep it positioned absolutely to float over the map
-    'top': '10px',  # Keep the top position as is
-    'right': '10px',  # Use 'right' instead of 'left' to align to the right side
-    'width': '30vw',  # Menu width as 30% of the viewport width
-    'height': '40vh',  # Menu height as 40% of the viewport height
-    'background': 'rgba(255, 255, 255, 0.5)',  # White background with 50% opacity
-    'padding': '10px',
-    'borderRadius': '5px',  # Optional: rounded corners for the menu
-    'zIndex': '1000',  # Ensure it sits on top of other elements
-    'overflow': 'auto'  # Add scroll for overflow content
-}
 
 map_style = {
     'width': '100%',  # Map width is 100% of its container
@@ -51,18 +42,32 @@ for item in feat_columns:
 df_merge = create_merged_df(feat_columns)
 df_merge = df_merge.reset_index()
 
+
+
 # Load the modified GeoJSON data
 df = pd.read_csv('../Data/dataset_teams.csv', delimiter=',')
 team_to_country = df.set_index('team')['country'].to_dict()
 ranking = pd.read_csv('../Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv')
 ranking = ranking[ranking['team'].isin(df_merge['team'])]
 
+df_merge_json = pd.merge(df, df_merge, on='team')
+
+
 with open('../Data/modified_countries2.geojson', 'r') as f:
     geojson_data = json.load(f)
 
 
 # Define a color dictionary outside of the callback
-country_colors = {country: color for country, color in zip(df_merge['team'].unique(), px.colors.qualitative.Plotly)}
+cmap = cm.get_cmap('tab20b', len(df_merge['team'])+1)
+colors = cmap(np.linspace(0, 1, len(df_merge['team'])+1))
+hex_colors = [cm.colors.rgb2hex(color) for color in colors]
+
+country_colors = {}
+i = 0 
+for country in df_merge['team']:
+    country_colors[country] = hex_colors[i]
+    i = i + 1 
+
 
 with open('../Data/modified_countries2.geojson', 'r') as f:
     geojson_data = json.load(f)
@@ -71,107 +76,124 @@ with open('../Data/modified_countries2.geojson', 'r') as f:
 def create_modal():
     return dbc.Modal(
         [
-            dbc.ModalHeader(dbc.ModalTitle("Feature Correlations")),
-            dbc.ModalBody(dcc.Graph(id='imageCorr', figure=[corr_plots('defense', feat_cats, df_merge)])
+            dbc.ModalHeader(dbc.ModalTitle("Feature Correlations"), style={'width':'800px'}),
+            dbc.ModalBody(dcc.Graph(id='imageCorr', figure=[corr_plots('defense', feat_cats, df_merge)]), style={'width':'800px'}
             ),
         ],
         id="image-modal",
-        is_open=False  
+        is_open=False
     )
 
 
 app.layout = (
-    dbc.Container(
-        style={'width': '80%', 'margin': '0 auto',  'font-family': 'verdana'},
-        fluid=True,
-        children=[create_modal(),
-            dbc.Row(
-                dbc.Col(
-                    html.H1("StrikerShield", className='text-center my-4 text-white'),
-                    width=14,
-                    style={'font-family': 'Broadway', 'marginTop': '30px'}
-                )),
+    dbc.Container(style={'width': '80%', 'margin': '0 auto',  'font-family': 'verdana'}, fluid=True, children=[
+    create_modal(),
+    dbc.Row(dbc.Col(html.H1("StrikerShield", className='text-center my-4 text-white'), width=14, style= {'font-family': 'Broadway', 'marginTop': '30px'})),
 
-            dbc.Row([dbc.Col(
-                            dbc.Card(
-                        [
-                                dbc.CardHeader(html.H2("Explore Category", className='text-white', style={'fontSize': '1.5em'})),
-                                dbc.CardBody([
-                                    dbc.Button('Defense',
-                                               id='btn-1',
-                                               color="secondary",
-                                               className="me-1",
-                                               n_clicks=0,
-                                               style={'background-color': 'darkgreen'}),
-                                    dbc.Button('Possession',
-                                               id='btn-2',
-                                               color="secondary",
-                                               className="me-1",
-                                               n_clicks=0),
-                                    dbc.Button('Attack',
-                                               id='btn-3',
-                                               color="secondary",
-                                               className="me-1",
-                                               n_clicks=0),
-                                    html.Hr(className='bg-light'),
-                                    dbc.Row([
-                                        dbc.Button("Feature-rank correlations", id="open-modal-btn", color='secondary', className="me-1", n_clicks=0)]),
-                                    html.Hr(className='bg-light'),
-                                    html.H2('Select Feature(s)', className='text-white', style={'fontSize': '1.5em'}),
-                                    dcc.Dropdown(id='feature_dd', options=[{'label': get_labels(feat), 'value': feat} for feat in feat_columns],
-                                                 style={'color': 'black'},
-                                                 multi= True),
-                                    html.H2('Undo normalization', className='text-white', style={'fontSize': '1.5em'}),
-                                    dbc.Checklist(options=[{"label": "", "value": 1}],
-                                                  value=[],
-                                                  id="normalize-toggle",
-                                                  switch=True, ),
-                                    html.Div(id='normalize-label', children='Using Normalized Data', className='text-white'),
-                                ])
-                                ],
-                            color="dark"),
-                            width=4
-                            ),
-                    dbc.Col(dcc.Graph(id='plot'), id='plot_con'),
+    dbc.Row([
+        dbc.Col(dbc.Card([
+            dbc.CardBody([
+                html.H2("Choose Category", className='text-white', style={'fontSize': '1.5em'}),
+                dbc.Button('Defense', id='btn-1', color="secondary", className="me-1", n_clicks=0, style = {'background-color': 'darkgreen'}),
+                dbc.Button('Possession', id='btn-2', color="secondary", className="me-1", n_clicks=0),
+                
+                dbc.Button('Attack', id='btn-3', color="secondary", className="me-1", n_clicks=0),
+                html.Hr(className='bg-light'),
+                html.H2('Select Feature(s)', className='text-white', style={'fontSize': '1.5em'}),
+                html.Div(id='text1', children='Click on one of the feature-rank correlation plots ', className='text-white'),
+                    dbc.Row([
+                    dbc.Button("Feature-Rank correlation plots", id="open-modal-btn", color='secondary', className="me-1", n_clicks=0)]),
+                    html.Div(id='text2', children='Or select features manually', className='text-white'),
+                                   
+                dcc.Dropdown(id='feature_dd', options=[{'label': feat, 'value': feat} for feat in feat_columns], style={'color': 'black'}, multi= True),
+                html.Hr(className='bg-light'), 
+                html.H2('Choose Raw or Min-Max Scaled Data', className='text-white', style={'fontSize': '1.5em'}),
+        dbc.Checklist(
+        options=[
+            {"label": "", "value": 1}
+        ],
+        value=[],
+        id="normalize-toggle",
+        switch=True,
+    ),
+    html.Div(id='normalize-label', children='Using Min-Max Scaled Data', className='text-white'),
+    html.Hr(className='bg-light'),
+        html.H2('Select Countries to Compare', className='text-white', style={'fontSize': '1.5em'}),
+         html.Div(id='text3', children='Select features manually', className='text-white'),
 
-                    html.Label("Compare countries from filters in violin plots"),
-                    dcc.Dropdown(id='country-select-dropdown',
-                                 options=[{'label': team, 'value': team} for team in sorted(df_merge['team'].unique())],
-                                 style={'color': 'black','width':'50%'},
-                                 multi=True,
-                                 value=None),
-                    ]),
+            dcc.Dropdown(id='country-select-dropdown',
+                 options=[{'label': team, 'value': team} for team in sorted(df_merge['team'].unique())],
+                 style={'color': 'black'},
+                 multi=True,
+                 value=None), html.Div(id='text4', children='Or click on a country in the map below', className='text-white')]
+                 )
+        
+        ], color="dark"), width=4),
+        dbc.Col(dcc.Graph(id='plot'), id='plot_con')
 
-            html.Br(style={"line-height": "5"}),
-            dbc.Row([
-                html.Div(
-                    [
-                        generate_map(),  # This creates the map component
-                        html.Div(  # This creates the overlay menu
-                            id="overlay-menu",
-                            children=make_menu_layout(),
-                            style=menu_style,
-                        )
-                    ],
-                    style={'position': 'relative'}  # Needed for correct positioning of the overlay
+    ]),
+
+    html.Br(style={"line-height": "5"}),
+    dbc.Row([
+        html.Div(
+            [
+                generate_map(),  # This creates the map component
+                html.Div(  # This creates the overlay menu
+                    id='legend-container'
                 )
+            ],
+            style={'position': 'relative'}  # Needed for correct positioning of the overlay
+        )
 
-            ]),
-        ]
-    )
-)
-
+    ]),
+    html.Div(id='selected-feature-map', style={'display': 'none'})
+]))
 
 @app.callback(
-    [dash.dependencies.Output("image-modal", "is_open")],
-    [dash.dependencies.Input("open-modal-btn", "n_clicks")],
-    [dash.dependencies.State("image-modal", "is_open")]
-)
-def toggle_modal(n1, is_open):
-    if n1:
-        return [True]
+    Output('selected-feature-map', 'children'),
+    [Input('plot', 'clickData')],
+    [State('feature_dd', 'options')])
+def display_click_data(clickData, feature_options):
+    if clickData is not None:
+        label = clickData['points'][0]['x']
+        feature_label = getFeatFromLabel(label)
+        return feature_label
     else:
-        return [False]
+        raise PreventUpdate
+
+@app.callback(
+    [Output("image-modal", "is_open"),
+     Output("feature_dd", "value")],
+    [Input("open-modal-btn", "n_clicks"),
+     Input("imageCorr", "clickData")],
+    [State("image-modal", "is_open"),
+     State('feature_dd', 'options'),
+     State("feature_dd", "value")]
+)
+def toggle_modal(n1, clicked, is_open, feature_options, current_value):
+    ctx = dash.callback_context
+    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    # If the button to open the modal was clicked
+    if trigger_id == "open-modal-btn":
+        return [not is_open, dash.no_update]  # Toggle the modal, no change to dropdown
+
+    # If a point on the correlation plot was clicked
+    elif trigger_id == "imageCorr" and clicked:
+        # Use the point's customdata or text/label to match the feature name
+        feat_idx = clicked['points'][0]['curveNumber']
+        clicked_feat_label = feature_options[feat_idx]['label']
+        # Find the corresponding feature value (if the label is the feature name itself, you can directly use it)
+        clicked_feat_value = getFeatFromLabel(clicked_feat_label)  # Assuming this function returns the feature name
+        # Update the dropdown to show the clicked feature (append if multiselect is allowed)
+        if current_value is not None and isinstance(current_value, list):
+            return [is_open, current_value + [clicked_feat_value]]
+        else:
+            return [is_open, [clicked_feat_value]]
+
+    # Default return (covers initial load and other unspecified conditions)
+    return [is_open, dash.no_update]
+
 
 @app.callback(
     [Output("imageCorr", "figure")],
@@ -197,13 +219,28 @@ def update_graph(btn1, btn2, btn3, existing_figure):
 @app.callback(
     [Output('plot', 'figure'),
      Output('plot', 'style'),
-     Output('plot_con', 'style')],
+     Output('plot_con', 'style'),
+     Output('country-select-dropdown', 'value')],
     [Input('feature_dd', 'value'),
-     Input('country-select-dropdown', 'value'),
-     Input('normalize-toggle', 'value')]
+     Input('normalize-toggle', 'value'),
+     Input('imageCorr', 'clickData'),
+     Input('map', 'clickData'),
+     Input('country-select-dropdown', 'value')],
+     [State('feature_dd', 'options')]
 )
-def update_violin_plot_with_countries(selected_features, selected_countries, normalize):
-    # Correctly set the normalization flag based on the toggle
+def update_violin_plot_with_countries(selected_features, normalize, corrClick, mapClick, selected_countries, feature_options):
+    if mapClick:
+        lat = mapClick['latlng']['lat']
+        lng = mapClick['latlng']['lng']
+        geolocator = Nominatim(user_agent="geoapiExercises")
+        location = geolocator.reverse((lat, lng), language='en')
+        countryClicked = location.raw['address']['country']
+        if selected_countries == None:
+            selected_countries = [countryClicked]
+        else:
+            if countryClicked not in selected_countries:
+                selected_countries.append(countryClicked)
+
     use_normalized_data = not (1 in normalize)
 
     # Initialize figure
@@ -213,6 +250,8 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
     if not selected_features:
         # Provide a default empty figure layout if no features are selected
         fig.update_layout(
+            height=600,
+            width=950,
             title_text='Please select at least one feature to visualize.',
             xaxis={'visible': False},
             yaxis={'visible': False},
@@ -272,13 +311,15 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
                 font_family="Arial"
             )
         )
-
+        
         # Process selected countries to add their data points to the plot
         if selected_countries:
+            
+
             # Initialize a dictionary to keep track of whether a country's legend item has been added
             country_legend_added = {country: False for country in selected_countries}
             for country in selected_countries:
-                country_color = country_colors.get(country, 'black')
+                country_color = country_colors.get(country)
                 for feature in selected_features:
                     country_data = df_merge[df_merge['team'] == country][feature]
                     # Normalize country-specific data if the toggle is on
@@ -291,7 +332,7 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
 
                     # Add scatter plot for the country data points
                     fig.add_trace(go.Scatter(
-                        x=[feature] * len(country_data),
+                        x=[get_labels(feature)] * len(country_data),
                         y=country_data,
                         mode='markers',
                         marker=dict(color=country_color, size=10),
@@ -305,16 +346,16 @@ def update_violin_plot_with_countries(selected_features, selected_countries, nor
 
         # Update the layout of the figure
         fig.update_layout(
-            #title_text='Violin Plots for Selected Features and Countries',
+            title_text='Click on violin plot to visualise feature values in map',
             #yaxis_title='Standard deviations from the mean' if use_normalized_data else 'Raw values',
             yaxis_title=ytitle,
             showlegend=True,
             margin=dict(l=10, r=10, t=50, b=60),
-            height=450,
-            width=950
+            height=600,
+            width=950,
         )
 
-    return fig, {'display': 'block'}, {'display': 'block', 'width': '100%'}
+    return fig, {'display': 'block'}, {'display': 'block', 'width': '100%'}, selected_countries
 
 
 @app.callback(
@@ -362,41 +403,41 @@ def update_button_styles(btn1, btn2, btn3):
             return [default_style, default_style, selected_style, options]
 
 @app.callback(
-    Output("geojson", "hideout"),
-    Output("country-select-dropdown", "options"),
-    [Input('rank-slider', 'value')])
-def update_geojson_style(selected_range):
-    min_rank, max_rank = selected_range
-    filtered_df = ranking[(ranking['rank'] >= min_rank) & (ranking['rank'] <= max_rank)]
-    opt = [{'label': team, 'value': team} for team in sorted(filtered_df['team'].unique())]
-    return {"min_rank": min_rank, "max_rank": max_rank}, opt
+    [Output("geojson", "hideout"),
+     Output("legend-container", "children")],
+    [Input('selected-feature-map', 'children'),
+     Input('normalize-toggle', 'value')])
+def update_geojson_style(feat, normalize):
+    if feat:
+        
+        min_val = df_merge[feat].min()
+        max_val = df_merge[feat].max()
+        all_val = df_merge[feat]
 
-@app.callback(
-    [Output("map", "center"),
-     Output("map", "zoom"),
-     Output("map", "children"),
-     ],  # Update this to change the map's children
-    [Input('dropdown_search', 'value')]
-)
-def update_map_on_team_select(selected_team):
-    default_zoom = 2
-    default_center = [20, 0]
-    map_children = [dl.TileLayer(), geojson_layer]  # Include default layers
+        norm = plt.Normalize(min_val, max_val)
+        cmap = plt.cm.get_cmap('Purples')
+        
+        list_teams = list(df_merge['team'])
+        dict_color = {}
+        for idx in range(len(list_teams)):
+            team = list_teams[idx]
+            val = all_val.iloc[idx]
+            dict_color[team] = mcolors.rgb2hex(cmap(norm(val)))
+        # Create the legend
+        if 1 in normalize:
+            legend = create_legend(float((min_val)), float((max_val)), cmap, feat)
+        else:
+            legend = create_legend(float(norm(min_val)), float(norm(max_val)), cmap, feat)
 
-    if selected_team is None:
-        return default_center, default_zoom, map_children
+        return {'countryToColor': dict_color}, legend
 
-    selected_country = team_to_country.get(selected_team, None)
-    if selected_country:
-        for feature in geojson_data['features']:
-            if feature['properties']['ADMIN'] == selected_country:
-                country_center = calculate_center(feature['geometry'])
-                new_zoom = 5
-                marker = dl.Marker(position=country_center, children=dl.Tooltip(selected_country))
-                map_children.append(marker)  # Add the marker to children
-                return country_center, new_zoom, map_children
+    else:
+        dict_color = {}
+        for team in df_merge['team'].unique():
+            dict_color[team] = 'white'
+        return {'countryToColor': dict_color}, None
+    
 
-    return default_center, default_zoom, map_children
 
 
 if __name__ == '__main__':

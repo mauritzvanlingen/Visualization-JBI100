@@ -1,22 +1,13 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
         function0: function(feature, context) {
-            const {
-                min_rank,
-                max_rank
-            } = context.hideout;
-            const rank = feature.properties.rank;
-            if (rank >= min_rank && rank <= max_rank) {
-                return {
-                    fillColor: 'red',
-                    color: 'grey',
-                    weight: 0.5
-                };
-            }
+            const country = feature.properties.ADMIN;
+            const color_coun = context.hideout.countryToColor[country];
             return {
-                fillColor: 'grey',
-                color: 'grey',
-                weight: 0.5
+                fillColor: color_coun,
+                color: 'None',
+                weight: 0.5,
+                fillOpacity: 1
             };
         },
         function1: function(feature, layer) {

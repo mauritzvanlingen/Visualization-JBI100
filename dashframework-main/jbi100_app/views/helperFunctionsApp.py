@@ -322,3 +322,60 @@ def get_labels(feature):
 
   return labels[feature]
 
+def getFeatFromLabel(label):
+  labels = {
+    'tackles': 'Tackles',
+    'blocks': 'Blocks',
+    'interceptions': 'Interceptions',
+    'clearances': 'Clearances',
+    'errors': 'Errors',
+    'team': 'Team',
+    'minutes': 'Minutes',
+    'tackles_won': 'Tackles won',
+    'tackles_def_3rd': 'Tackles in def',
+    'tackles_mid_3rd': 'Tackles in mid',
+    'tackles_att_3rd': 'Tackles in att',
+    'dribble_tackles': 'Dribblers tackled',
+    'dribbles_vs': 'Dribbled and tackles',
+    'dribble_tackles_pct': 'Percentage dribblers tackled',
+    'dribbled_past': 'Dribbled past',
+    'blocked_shots': 'Blocking shots',
+    'blocked_passes': 'Blocking passes',
+    'tackles_interceptions': 'Tackles and interceptions',
+    'touches': 'Touches',
+      'touches_def_pen_area': 'Touches def penalty area',
+      'touches_def_3rd': 'Touches in def',
+      'touches_mid_3rd': 'Touches in mid',
+      'touches_att_3rd': 'Touches in att',
+      'touches_att_pen_area': 'Touches in att penalty area',
+      'touches_live_ball': 'Live-ball touches',
+      'dribbles_completed': 'Dribbles completed',
+      'dribbles': 'Dribbles attempted',
+      'dribbles_completed_pct': 'Percentage dribbles completed',
+      'miscontrols': 'Failed control attempt',
+      'dispossessed': 'Lost control',
+      'passes_received': 'Passes received',
+      'progressive_passes_received': 'Progressive passes received',
+      'sca_per90': 'SCA per 90',
+      'sca_passes_live': 'SCA completed live',
+      'sca_passes_dead': 'SCA completed dead',
+      'sca_dribbles': 'SCA dribbles',
+      'sca_shots': 'SCA shots',
+      'sca_fouled': 'SCA fouls',
+      'sca_defense': 'SCA defensive',
+      'gca_per90': 'GCA per 90',
+      'sca': 'Shot-Creating Actions',
+      'gca': 'Goal-Creating Actions',
+      'gca_passes_live': 'GCA completed live',
+      'gca_passes_dead': 'GCA completed dead',
+      'gca_dribbles': 'GCA dribbles',
+      'gca_shots': 'GCA shots',
+      'gca_fouled': 'GCA fouls',
+      'gca_defense': 'GCA defensive'}
+  for key, val in labels.items():
+    if val == label:
+        return key
+
+
+
+
