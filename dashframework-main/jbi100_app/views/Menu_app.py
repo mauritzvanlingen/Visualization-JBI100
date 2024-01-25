@@ -2,8 +2,11 @@ from dash import dcc, html
 import pandas as pd
 
 
-def generate_dropdown_search(df):
-    teams = sorted(df['team'].tolist())
+df = pd.read_csv('../Data/dataset_teams.csv')
+teams = sorted(df['team'].tolist())
+
+
+def generate_dropdown_search():
     return html.Div(
         children=[
             html.Label("Search country"),
@@ -18,7 +21,7 @@ def generate_dropdown_search(df):
         style = {'color':'black'},
     )
 
-def generate_control_card(df):
+def generate_control_card():
     """
 
     :return: A Div containing controls for graphs.
@@ -43,5 +46,5 @@ def generate_control_card(df):
     )
 
 
-def make_menu_layout(df):
-    return [generate_control_card(df), generate_dropdown_search(df)]
+def make_menu_layout():
+    return [generate_control_card(), generate_dropdown_search()]

@@ -125,7 +125,7 @@ app.layout = (
                 generate_map(),  # This creates the map component
                 html.Div(  # This creates the overlay menu
                     id="overlay-menu",
-                    children=make_menu_layout(ranking),
+                    children=make_menu_layout(),
                     style=menu_style,
                 )
             ],
