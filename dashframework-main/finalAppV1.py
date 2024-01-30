@@ -28,6 +28,8 @@ map_style = {
     'margin': 'auto',  # Center the map within the column
 }
 
+WIDTH_VIOLIN_PLOTS = 800
+
 feat_cats = get_cats()
 
 feat_columns = []
@@ -58,7 +60,7 @@ with open('../Data/modified_countries2.geojson', 'r') as f:
 
 
 # Define a color dictionary outside of the callback
-cmap = cm.get_cmap('tab20b', len(df_merge['team'])+1)
+cmap = plt.get_cmap('tab20b', len(df_merge['team'])+1)
 colors = cmap(np.linspace(0, 1, len(df_merge['team'])+1))
 hex_colors = [cm.colors.rgb2hex(color) for color in colors]
 
@@ -251,7 +253,7 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, m
         # Provide a default empty figure layout if no features are selected
         fig.update_layout(
             height=600,
-            width=950,
+            width=WIDTH_VIOLIN_PLOTS,
             title_text='Please select at least one feature to visualize.',
             xaxis={'visible': False},
             yaxis={'visible': False},
@@ -352,10 +354,10 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, m
             showlegend=True,
             margin=dict(l=10, r=10, t=50, b=60),
             height=600,
-            width=950,
+            width=WIDTH_VIOLIN_PLOTS,
         )
 
-    return fig, {'display': 'block'}, {'display': 'block', 'width': '100%'}, selected_countries
+    return fig, {'display': 'block'}, {'display': 'block', 'width': '10%'}, selected_countries
 
 
 @app.callback(
@@ -408,35 +410,30 @@ def update_button_styles(btn1, btn2, btn3):
     [Input('selected-feature-map', 'children'),
      Input('normalize-toggle', 'value')])
 def update_geojson_style(feat, normalize):
-    if feat:
+    if not feat:
+        feat = "points"
         
-        min_val = df_merge[feat].min()
-        max_val = df_merge[feat].max()
-        all_val = df_merge[feat]
+    min_val = df_merge[feat].min()
+    max_val = df_merge[feat].max()
+    all_val = df_merge[feat]
 
-        norm = plt.Normalize(min_val, max_val)
-        cmap = plt.cm.get_cmap('Purples')
-        
-        list_teams = list(df_merge['team'])
-        dict_color = {}
-        for idx in range(len(list_teams)):
-            team = list_teams[idx]
-            val = all_val.iloc[idx]
-            dict_color[team] = mcolors.rgb2hex(cmap(norm(val)))
-        # Create the legend
-        if 1 in normalize:
-            legend = create_legend(float((min_val)), float((max_val)), cmap, feat)
-        else:
-            legend = create_legend(float(norm(min_val)), float(norm(max_val)), cmap, feat)
-
-        return {'countryToColor': dict_color}, legend
-
-    else:
-        dict_color = {}
-        for team in df_merge['team'].unique():
-            dict_color[team] = 'white'
-        return {'countryToColor': dict_color}, None
+    norm = plt.Normalize(min_val, max_val)
+    cmap = plt.get_cmap('Purples')
     
+    list_teams = list(df_merge['team'])
+    dict_color = {}
+    for idx in range(len(list_teams)):
+        team = list_teams[idx]
+        val = all_val.iloc[idx]
+        dict_color[team] = mcolors.rgb2hex(cmap(norm(val)))
+    # Create the legend
+    if 1 in normalize:
+        legend = create_legend(float((min_val)), float((max_val)), cmap, feat)
+    else:
+        legend = create_legend(float(norm(min_val)), float(norm(max_val)), cmap, feat)
+
+    return {'countryToColor': dict_color}, legend
+
 
 
 
