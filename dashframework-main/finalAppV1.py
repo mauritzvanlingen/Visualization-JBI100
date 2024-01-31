@@ -260,7 +260,7 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, b
                 data = (data - min_val) / (max_val - min_val)
                 ytitle = 'Min-max scaled values'
             else:
-                ytitle = 'Raw values'
+                ytitle = 'Raw values per 90 minutes'
 
             fig.add_trace(go.Violin(
                 y=data,
@@ -413,13 +413,17 @@ def update_bar_chart(feat, normalize):
         min_val = data.min()
         max_val = data.max()
         data = (data - min_val) / (max_val - min_val)
+        ytitle = 'Min-max scaled values'
+    else:
+        ytitle = 'Raw values per 90 minutes'
 
     # Create and configure the bar chart
     fig = go.Figure()
     fig.add_trace(go.Bar(x=list(df_temp['team']), y=data))
     fig.update_layout(
         title_text=get_labels(feat),
-        xaxis={'categoryorder': 'total ascending'}
+        xaxis={'categoryorder': 'total ascending'},
+        yaxis_title = ytitle
     )
     
     return fig
