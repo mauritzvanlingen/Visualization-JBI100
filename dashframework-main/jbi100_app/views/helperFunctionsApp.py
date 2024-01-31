@@ -1,87 +1,131 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
 import plotly.graph_objs as go
-from sklearn.preprocessing import StandardScaler
-import plotly
-import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objs as go
-import scipy.stats as stats
 
 def get_cats():
-    df_player_gca           = pd.read_csv('../Data/FIFA World Cup 2022 Player Data/player_gca.csv', delimiter=',')
-    df_player_possession    = pd.read_csv('../Data/FIFA World Cup 2022 Player Data/player_possession.csv', delimiter=',')
-    df_player_defense       = pd.read_csv('../Data/FIFA World Cup 2022 Player Data/player_defense.csv', delimiter=',')
+    """
+    Extracts and organizes the categories of player data (attack, possession, defense)
+    from CSV files. Returns a dictionary with categories as keys and lists of feature
+    names as values.
+
+    Returns:
+        dict: A dictionary containing the categories and their corresponding features.
+    """
+   # Read CSV files containing player data
+    df_player_gca = pd.read_csv('../Data/FIFA World Cup 2022 Player Data/player_gca.csv', delimiter=',')
+    df_player_possession = pd.read_csv('../Data/FIFA World Cup 2022 Player Data/player_possession.csv', delimiter=',')
+    df_player_defense = pd.read_csv('../Data/FIFA World Cup 2022 Player Data/player_defense.csv', delimiter=',')
+
+    # Extract column names from the dataframes
     col1 = list(df_player_gca.columns)
     col2 = list(df_player_possession.columns)
     col3 = list(df_player_defense.columns)
+    cols = [col1, col2, col3]
 
-    cols =[col1, col2, col3]
+    # Define columns to be removed
     remove_rows = ['player', 'position', 'age', 'birth_year', 'minutes_90s']
+    
+    # Remove specified columns and add 'minutes' to each category
     for col in cols:
         col.append('minutes')
         for item in remove_rows:
             while item in col:
                 col.remove(item)
-    features = {'attack':col1, 'possession':col2, 'defense':col3}
+    
+    # Organize features into categories
+    features = {'attack': col1, 'possession': col2, 'defense': col3}
     return features
     
 
-def create_merged_df(features):    
+def create_merged_df(features):
+    """
+    Creates a merged DataFrame by reading team data and FIFA ranking data from CSV files,
+    then merging them based on the team name. The data is normalized based on the number
+    of matches played.
+
+    Args:
+        features (list): List of features to include in the merged DataFrame.
+
+    Returns:
+        pd.DataFrame: A normalized DataFrame containing merged team and FIFA ranking data.
+    """    
+    # Read team data and FIFA ranking data from CSV files
     df_team = pd.read_csv("../Data/FIFA World Cup 2022 Team Data/team_data.csv")
-    df_red = df_team[features]
     df_fifa = pd.read_csv("../Data/FIFA World Cup Historic/fifa_ranking_2022-10-06.csv")
-    # Merge dataframes and select features 
+
+    # Reduce team DataFrame to selected features
+    df_red = df_team[features]
+
+    # Merge team data with FIFA ranking data
     merged_df = pd.merge(df_red, df_fifa[['team', 'rank', 'points']], on='team')
     red_mer_df = merged_df.set_index('team')
 
-    # Normalize data by dividing by nr of matches played
+    # Normalize data based on the number of matches played
     norm_df = red_mer_df.copy()
-    norm_df['nr_match'] = norm_df['minutes']/90
+    norm_df['nr_match'] = norm_df['minutes'] / 90
     norm_df = norm_df.apply(lambda row: row / row['nr_match'], axis=1)
+    
+    # Keep certain columns unnormalized
     norm_df[['minutes', 'rank', 'dribble_tackles_pct', 'dribbles_completed_pct', 'gca_per90', 'sca_per90', 'points']] = red_mer_df[['minutes', 'rank', 'dribble_tackles_pct', 'dribbles_completed_pct', 'gca_per90', 'sca_per90', 'points']]
     return norm_df
 
 def corr_plots(cat_key, cats, df):
-    # Select the category based on idx and remove 'rank' if it is not used as y-axis
+    """
+    Generates a series of scatter plots showing the correlation between selected features
+    and FIFA points. Each subplot represents the correlation for one feature.
+
+    Args:
+        cat_key (str): The key representing the category of features (e.g., 'attack', 'defense').
+        cats (dict): Dictionary containing categories and their corresponding features.
+        df (pd.DataFrame): The DataFrame containing the data to be used in the plots.
+
+    Returns:
+        go.Figure: A Plotly graph object figure containing the subplots.
+    """
+    # Select features based on the category key
     selected_features = cats[cat_key]
 
+    # Define rows to be removed from the analysis
     remove_rows = ['rank', 'points', 'team', 'minutes']
+
+    # Remove specified rows from the selected features
     for item in remove_rows:
         while item in selected_features:
             selected_features.remove(item)
 
     # Create subplot titles
     subplot_titles = [f"{feature} vs FIFA Points" for feature in selected_features if feature != 'points']
-
-    # Create subplots with titles
     num_plots = len(subplot_titles)
+
+    # Create a figure with subplots
     fig = make_subplots(rows=num_plots, cols=1, subplot_titles=subplot_titles)
 
+    # Add scatter plots to the figure
     for i, feature in enumerate(selected_features, 1):
-        
-        clean_data = df[[feature, 'points']]
-
-        # Calculate correlation coefficient
-        correlation = clean_data.corr().iloc[0, 1]
+        data_red = df[[feature, 'points']]
+        correlation = data_red.corr().iloc[0, 1]
         subplot_title = f"{feature} vs FIFA Points (Correlation: {correlation:.2f})"
-
-        # Add scatter trace for each feature
-        fig.add_trace(go.Scatter(x=clean_data[feature], y=clean_data['points'], mode='markers', name=feature, showlegend=False), row=i, col=1)
-
-        # Update subplot title with correlation
+        fig.add_trace(go.Scatter(x=data_red[feature], y=data_red['points'], mode='markers', name=feature, showlegend=False), row=i, col=1)
         fig['layout']['annotations'][i-1]['text'] = subplot_title
-
-        # Add x and y axis titles
         fig.update_xaxes(title_text=feature, row=i, col=1)
         fig.update_yaxes(title_text="FIFA Points", row=i, col=1)
 
+    # Update layout of the figure
     fig.update_layout(height=300 * num_plots, width=800)
     return fig
 
+
 def get_descriptions(feature):
+    """
+    Provides descriptions for various features used in the analysis.
+    
+    Args:
+        feature (str): The name of the feature for which the description is requested.
+    
+    Returns:
+        str: A description of the specified feature.
+    """
     descriptions = {"players_used": "Number of Players used in Games",
   "avg_age": "Age is weighted by minutes played",
   "possession": " Possession  Calculated as the percentage of passes attempted",
@@ -270,6 +314,15 @@ def get_descriptions(feature):
     return descriptions[feature]
 
 def get_labels(feature):
+  """
+    Provides user-friendly labels for various features used in the analysis.
+    
+    Args:
+        feature (str): The name of the feature for which the label is requested.
+    
+    Returns:
+        str: A user-friendly label for the specified feature.
+    """
   labels = {
     'tackles': 'Tackles',
     'blocks': 'Blocks',
@@ -319,11 +372,20 @@ def get_labels(feature):
     'gca_shots': 'GCA shots',
     'gca_fouled': 'GCA fouls',
     'gca_defense': 'GCA defensive',
-    'points': 'points'}
+    'points': 'Total points in FIFA ranking'}
 
   return labels[feature]
 
 def getFeatFromLabel(label):
+  """
+    Provides the feature name corresponding to a given user-friendly label.
+    
+    Args:
+        label (str): The user-friendly label of the feature.
+    
+    Returns:
+        str: The name of the feature corresponding to the given label.
+  """
   labels = {
     'tackles': 'Tackles',
     'blocks': 'Blocks',
