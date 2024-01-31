@@ -405,7 +405,7 @@ def update_bar_chart(feat, normalize):
         feat = "points"
 
     # Prepare the data for the bar chart
-    df_temp = df_merge[['team', feat]].sort_values(by=feat)
+    df_temp = df_merge[['team', feat]].sort_values(by=feat, ascending=False)
     data = df_temp[feat]
 
     # Normalize data if required
@@ -419,7 +419,7 @@ def update_bar_chart(feat, normalize):
     fig.add_trace(go.Bar(x=list(df_temp['team']), y=data))
     fig.update_layout(
         title_text=get_labels(feat),
-        xaxis={'categoryorder': 'total ascending'}
+        #xaxis={'categoryorder': 'total ascending'}
     )
     
     return fig
