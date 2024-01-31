@@ -106,10 +106,13 @@ def corr_plots(cat_key, cats, df):
         data_red = df[[feature, 'points']]
         correlation = data_red.corr().iloc[0, 1]
         subplot_title = f"{feature} vs FIFA Points (Correlation: {correlation:.2f})"
-        fig.add_trace(go.Scatter(x=data_red[feature], y=data_red['points'], mode='markers', name=feature, showlegend=False), row=i, col=1)
+        fig.add_trace(go.Scatter(x=data_red[feature], y=data_red['points'], mode='markers', name=feature, showlegend=False, text=df['team'],
+                                 selected=dict(marker=dict(color='red')), unselected=dict(marker=dict(opacity=0.3))), row=i, col=1,
+                      )
         fig['layout']['annotations'][i-1]['text'] = subplot_title
         fig.update_xaxes(title_text=feature, row=i, col=1)
         fig.update_yaxes(title_text="FIFA Points", row=i, col=1)
+        fig.update_layout(clickmode='event+select')
 
     # Update layout of the figure
     fig.update_layout(height=300 * num_plots, width=800)

@@ -30,6 +30,7 @@ feature_descriptions = {item: item for item in feat_columns}
 df_merge = create_merged_df(feat_columns)
 df_merge = df_merge.reset_index()
 
+
 # Define color mapping for countries
 cmap = plt.get_cmap('tab20b', len(df_merge['team'])+1)
 colors = cmap(np.linspace(0, 1, len(df_merge['team'])+1))
@@ -80,7 +81,9 @@ app.layout = (
         dbc.Col(dcc.Graph(id='plot'), id='plot_con')]),
     html.Br(style={"line-height": "5"}),
     dbc.Row(dcc.Graph(id='bar-chart'), id='bar-chart_con'),
-    html.Div(id='selected-feature-bc', style={'display': 'none'})]))
+    html.Div(id='selected-feature-bc', style={'display': 'none'}),
+    html.Div(id='selected-data')]))
+
 
 @app.callback(
     Output('selected-feature-bc', 'children'),
@@ -202,10 +205,11 @@ def update_corrPlots(btn1, btn2, btn3, existing_figure):
      Input('normalize-toggle', 'value'),
      Input('imageCorr', 'clickData'),
      Input('bar-chart', 'clickData'),
-     Input('country-select-dropdown', 'value')],
+     Input('country-select-dropdown', 'value'),
+     Input('imageCorr', 'selectedData')],
      [State('feature_dd', 'options')]
 )
-def update_violin_plot_with_countries(selected_features, normalize, corrClick, barClick, selected_countries, feature_options):
+def update_violin_plot_with_countries(selected_features, normalize, corrClick, barClick, selected_countries, brushingSelect, feature_options):
     """
     Update the violin plot based on selected features and countries. This callback
     also adjusts the data normalization and handles click events on the bar chart
@@ -224,12 +228,29 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, b
         and its container, and the updated list of selected countries.
     """
     # Update selected countries based on bar chart clicks
-    if barClick:
+
+    ctx = dash.callback_context
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if barClick and button_id == 'bar-chart':
         countryClicked = barClick['points'][0]['x']
         if selected_countries is None:
             selected_countries = [countryClicked]
         elif countryClicked not in selected_countries:
             selected_countries.append(countryClicked)
+    
+    if brushingSelect and button_id == 'imageCorr':
+        points = brushingSelect['points']
+        countryClicked = [point['text'] for point in points]
+
+        if selected_countries is None:
+            selected_countries = countryClicked
+        else:
+            for country in countryClicked:
+                if country not in selected_countries:
+                    selected_countries.append(country)
+                    
+
 
     # Determine if data should be normalized
     use_normalized_data = not (1 in normalize)
@@ -383,8 +404,9 @@ def update_button_styles(btn1, btn2, btn3):
 @app.callback(
     Output("bar-chart", "figure"),
     [Input('selected-feature-bc', 'children'),
-     Input('normalize-toggle', 'value')])
-def update_bar_chart(feat, normalize):
+     Input('normalize-toggle', 'value'),
+     Input('country-select-dropdown', 'value')])
+def update_bar_chart(feat, normalize, countries):
     """
     Callback to update the bar chart based on the selected feature and normalization state.
     Displays a bar chart of the selected feature for each team, with an option to
@@ -419,10 +441,12 @@ def update_bar_chart(feat, normalize):
 
     # Create and configure the bar chart
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=list(df_temp['team']), y=data))
+    for i, team in df_temp.iterrows():
+        color = 'blue' if team['team'] in countries else 'grey'
+        fig.add_trace(go.Bar(x=[team['team']], y=[team[feat]], name=team['team'], marker_color=color, showlegend=False))
     fig.update_layout(
         title_text=get_labels(feat),
-        xaxis={'categoryorder': 'total ascending'},
+        xaxis={'categoryorder': 'total descending'},
         yaxis_title = ytitle
     )
     
