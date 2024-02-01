@@ -31,12 +31,6 @@ df_merge = create_merged_df(feat_columns)
 df_merge = df_merge.reset_index()
 
 
-# Define color mapping for countries
-cmap = plt.get_cmap('tab20b', len(df_merge['team'])+1)
-colors = cmap(np.linspace(0, 1, len(df_merge['team'])+1))
-hex_colors = [cm.colors.rgb2hex(color) for color in colors]
-country_colors = {country: hex_colors[i] for i, country in enumerate(df_merge['team'])}
-
 # Define constants for layout
 WIDTH_VIOLIN_PLOTS = 1150
 
@@ -44,11 +38,12 @@ def create_modal():
     """Create a modal window for displaying feature correlations."""
     return dbc.Modal(
         [
-            dbc.ModalHeader(dbc.ModalTitle("Feature Correlations")),
-            dbc.ModalBody(dcc.Graph(id='imageCorr', figure=[corr_plots('defense', feat_cats, df_merge)]))
-        ],
+            dbc.ModalHeader(dbc.ModalTitle("Feature Correlations"), style={"maxWidth": "800px"} ),
+            dbc.ModalBody(dcc.Graph(id='imageCorr', figure=[corr_plots('defense', feat_cats, df_merge, ['Argentina', 'Senegal'])], 
+                                    style={"maxWidth": "800px"} ))
+        ], 
         id="image-modal",
-        is_open=False
+        is_open=False, 
     )
 
 # Define the layout of the app
@@ -78,9 +73,9 @@ app.layout = (
          html.Div(id='text3', children='Select countries manually', className='text-white'),
             dcc.Dropdown(id='country-select-dropdown', value=['Argentina', 'Senegal'], options=[{'label': team, 'value': team} for team in sorted(df_merge['team'].unique())], style={'color': 'black'}, multi=True), 
             html.Div(id='text4', children='Or click on a country in the bar chart below', className='text-white')])], color="dark"), width=4),
-        dbc.Col(dcc.Graph(id='plot'), id='plot_con')]),
+        dbc.Col(dcc.Graph(id='plot'), id='plot_con', style={'height': '300px'})]),
     html.Br(style={"line-height": "5"}),
-    dbc.Row(dcc.Graph(id='bar-chart'), id='bar-chart_con'),
+    dbc.Row(dcc.Graph(id='bar-chart'), id='bar-chart_con', style={'height': '300px'},),
     html.Div(id='selected-feature-bc', style={'display': 'none'}),
     html.Div(id='selected-data')]))
 
@@ -159,9 +154,10 @@ def toggle_modal(n1, clicked, is_open, feature_options, current_value):
 
 @app.callback(
     [Output("imageCorr", "figure")],
-    [Input("btn-1", "n_clicks"), Input("btn-2", "n_clicks"), Input("btn-3", "n_clicks")],
+    [Input("btn-1", "n_clicks"), Input("btn-2", "n_clicks"), Input("btn-3", "n_clicks"),
+     Input('country-select-dropdown', 'value')],
     [State("imageCorr", "figure")])
-def update_corrPlots(btn1, btn2, btn3, existing_figure):
+def update_corrPlots(btn1, btn2, btn3, selected_countries, existing_figure):
     """
     Callback to update the correlation plot based on the category button clicked by the user.
     The plot is updated to reflect correlations for either 'defense', 'possession', or 'attack'
@@ -184,17 +180,17 @@ def update_corrPlots(btn1, btn2, btn3, existing_figure):
     if button_id in ["btn-1", "btn-2", "btn-3"]:
         if button_id == "btn-1":
             # Update plot for 'defense' category
-            fig = corr_plots('defense', feat_cats, df_merge)
+            fig = corr_plots('defense', feat_cats, df_merge, selected_countries)
         elif button_id == "btn-2":
             # Update plot for 'possession' category
-            fig = corr_plots('possession', feat_cats, df_merge)
+            fig = corr_plots('possession', feat_cats, df_merge, selected_countries)
         elif button_id == "btn-3":
             # Update plot for 'attack' category
-            fig = corr_plots('attack', feat_cats, df_merge)
+            fig = corr_plots('attack', feat_cats, df_merge, selected_countries)
         return [fig]
     
     # Return the existing figure if no button is clicked
-    return existing_figure
+    return [corr_plots('defense', feat_cats, df_merge, selected_countries)]
 
 @app.callback(
     [Output('plot', 'figure'),
@@ -250,7 +246,14 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, b
                 if country not in selected_countries:
                     selected_countries.append(country)
                     
+    if len(selected_countries)>12:
+        selected_countries = selected_countries[:12]
 
+    # Define color mapping for countries
+    cmap = plt.get_cmap('hsv', 13)
+    colors = cmap(np.linspace(0, 1, 13))
+    hex_colors = [cm.colors.rgb2hex(color) for color in colors]
+    country_colors = {country: hex_colors[i] for i, country in enumerate(selected_countries)}
 
     # Determine if data should be normalized
     use_normalized_data = not (1 in normalize)
@@ -287,7 +290,7 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, b
                 y=data,
                 name=get_labels(feature),
                 line_color='black',
-                fillcolor='grey',
+                fillcolor='white',
                 box_visible=True,
                 meanline_visible=True,
                 showlegend=False
@@ -436,18 +439,25 @@ def update_bar_chart(feat, normalize, countries):
         max_val = data.max()
         data = (data - min_val) / (max_val - min_val)
         ytitle = 'Min-max scaled values'
+        df_temp[feat] = data
     else:
         ytitle = 'Raw values per 90 minutes'
+
+    cmap = plt.get_cmap('hsv', 13)
+    colors = cmap(np.linspace(0, 1, 13))
+    hex_colors = [cm.colors.rgb2hex(color) for color in colors]
+    country_colors = {country: hex_colors[i] for i, country in enumerate(countries)}
 
     # Create and configure the bar chart
     fig = go.Figure()
     for i, team in df_temp.iterrows():
-        color = 'blue' if team['team'] in countries else 'grey'
+        color = country_colors.get(team['team']) if team['team'] in countries else 'grey'
         fig.add_trace(go.Bar(x=[team['team']], y=[team[feat]], name=team['team'], marker_color=color, showlegend=False))
     fig.update_layout(
-        title_text=get_labels(feat),
+        #title_text=get_labels(feat),
         xaxis={'categoryorder': 'total descending'},
-        yaxis_title = ytitle
+        yaxis_title = get_labels(feat),
+        margin=dict(l=30, r=10, t=10, b=10)
     )
     
     return fig

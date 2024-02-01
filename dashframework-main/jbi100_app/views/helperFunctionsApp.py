@@ -2,6 +2,9 @@ import pandas as pd
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import plotly.graph_objs as go
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.cm as cm
 
 def get_cats():
     """
@@ -70,7 +73,7 @@ def create_merged_df(features):
     norm_df[['minutes', 'rank', 'dribble_tackles_pct', 'dribbles_completed_pct', 'gca_per90', 'sca_per90', 'points']] = red_mer_df[['minutes', 'rank', 'dribble_tackles_pct', 'dribbles_completed_pct', 'gca_per90', 'sca_per90', 'points']]
     return norm_df
 
-def corr_plots(cat_key, cats, df):
+def corr_plots(cat_key, cats, df, selected_countries):
     """
     Generates a series of scatter plots showing the correlation between selected features
     and FIFA points. Each subplot represents the correlation for one feature.
@@ -101,13 +104,22 @@ def corr_plots(cat_key, cats, df):
     # Create a figure with subplots
     fig = make_subplots(rows=num_plots, cols=1, subplot_titles=subplot_titles)
 
+    cmap = plt.get_cmap('hsv', 13)
+    colors = cmap(np.linspace(0, 1, 13))
+    hex_colors = [cm.colors.rgb2hex(color) for color in colors]
+    country_colors = {country: hex_colors[i] for i, country in enumerate(selected_countries)}
+    
+
     # Add scatter plots to the figure
     for i, feature in enumerate(selected_features, 1):
+        
         data_red = df[[feature, 'points']]
+        point_colors = ['grey' if team not in selected_countries else country_colors[team] for team in df['team']]
+        
         correlation = data_red.corr().iloc[0, 1]
         subplot_title = f"{feature} vs FIFA Points (Correlation: {correlation:.2f})"
         fig.add_trace(go.Scatter(x=data_red[feature], y=data_red['points'], mode='markers', name=feature, showlegend=False, text=df['team'],
-                                 selected=dict(marker=dict(color='red')), unselected=dict(marker=dict(opacity=0.3))), row=i, col=1,
+                                 selected=dict(marker=dict(color='blue')), marker_color=point_colors), row=i, col=1,
                       )
         fig['layout']['annotations'][i-1]['text'] = subplot_title
         fig.update_xaxes(title_text=feature, row=i, col=1)
@@ -115,7 +127,7 @@ def corr_plots(cat_key, cats, df):
         fig.update_layout(clickmode='event+select')
 
     # Update layout of the figure
-    fig.update_layout(height=300 * num_plots, width=800)
+    fig.update_layout(height=300 * num_plots, width=800, title='Click point to include feature or select (max. 12) to include countries')
     return fig
 
 
