@@ -82,6 +82,7 @@ def corr_plots(cat_key, cats, df, selected_countries):
         cat_key (str): The key representing the category of features (e.g., 'attack', 'defense').
         cats (dict): Dictionary containing categories and their corresponding features.
         df (pd.DataFrame): The DataFrame containing the data to be used in the plots.
+        selected_countries: List of selected countries 
 
     Returns:
         go.Figure: A Plotly graph object figure containing the subplots.

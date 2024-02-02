@@ -154,9 +154,9 @@ def toggle_modal(n1, clicked, is_open, feature_options, current_value):
 
 @app.callback(
     [Output("imageCorr", "figure")],
-    [Input("btn-1", "n_clicks"), Input("btn-2", "n_clicks"), Input("btn-3", "n_clicks"),
-     Input('country-select-dropdown', 'value')],
-    [State("imageCorr", "figure")])
+    [Input("btn-1", "n_clicks"), Input("btn-2", "n_clicks"), Input("btn-3", "n_clicks")],
+    [State('country-select-dropdown', 'value'),
+    State("imageCorr", "figure")])
 def update_corrPlots(btn1, btn2, btn3, selected_countries, existing_figure):
     """
     Callback to update the correlation plot based on the category button clicked by the user.
@@ -253,6 +253,9 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, b
     cmap = plt.get_cmap('hsv', 13)
     colors = cmap(np.linspace(0, 1, 13))
     hex_colors = [cm.colors.rgb2hex(color) for color in colors]
+    print(hex_colors)
+    hex_colors = hex_colors[::2] + hex_colors[-1:0:-2]
+    print(hex_colors)
     country_colors = {country: hex_colors[i] for i, country in enumerate(selected_countries)}
 
     # Determine if data should be normalized

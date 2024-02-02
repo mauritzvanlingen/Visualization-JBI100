@@ -39,7 +39,7 @@ def create_modal():
     return dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Feature Correlations"), style={"maxWidth": "800px"} ),
-            dbc.ModalBody(dcc.Graph(id='imageCorr', figure=[corr_plots('defense', feat_cats, df_merge, ['Argentina', 'Senegal'])], 
+            dbc.ModalBody(dcc.Graph(id='imageCorr', figure=corr_plots('defense', feat_cats, df_merge, ['Argentina', 'Senegal']), 
                                     style={"maxWidth": "800px"} ))
         ], 
         id="image-modal",
@@ -90,6 +90,7 @@ def store_clicked_feature(clickData, feature_options):
 
     Args:
         clickData (dict): Data from the clicked point on the plot.
+        feature_options (dict): Feature options that the user can currently select
 
     Returns:
         The label of the selected feature.
@@ -153,10 +154,10 @@ def toggle_modal(n1, clicked, is_open, feature_options, current_value):
 
 
 @app.callback(
-    [Output("imageCorr", "figure")],
-    [Input("btn-1", "n_clicks"), Input("btn-2", "n_clicks"), Input("btn-3", "n_clicks"),
-     Input('country-select-dropdown', 'value')],
-    [State("imageCorr", "figure")])
+    Output("imageCorr", "figure"),
+    [Input("btn-1", "n_clicks"), Input("btn-2", "n_clicks"), Input("btn-3", "n_clicks")],
+    [State('country-select-dropdown', 'value'),
+    State("imageCorr", "figure")])
 def update_corrPlots(btn1, btn2, btn3, selected_countries, existing_figure):
     """
     Callback to update the correlation plot based on the category button clicked by the user.
@@ -167,6 +168,7 @@ def update_corrPlots(btn1, btn2, btn3, selected_countries, existing_figure):
         btn1 (int): Number of clicks on the 'Defense' button.
         btn2 (int): Number of clicks on the 'Possession' button.
         btn3 (int): Number of clicks on the 'Attack' button.
+        selected_countries (list): List of selected countries 
         existing_figure (dict): The existing figure object of the correlation plot.
 
     Returns:
@@ -187,10 +189,10 @@ def update_corrPlots(btn1, btn2, btn3, selected_countries, existing_figure):
         elif button_id == "btn-3":
             # Update plot for 'attack' category
             fig = corr_plots('attack', feat_cats, df_merge, selected_countries)
-        return [fig]
-    
-    # Return the existing figure if no button is clicked
-    return [corr_plots('defense', feat_cats, df_merge, selected_countries)]
+        return fig
+    else:
+        # Prevent update if there's no click data
+        raise PreventUpdate
 
 @app.callback(
     [Output('plot', 'figure'),
@@ -217,6 +219,7 @@ def update_violin_plot_with_countries(selected_features, normalize, corrClick, b
         corrClick (dict): Data from click event on the correlation plot.
         barClick (dict): Data from click event on the bar chart.
         selected_countries (list): List of selected countries for comparison.
+        brushingSelect (dict): Data from select event on the correlation plot
         feature_options (list): List of feature options.
 
     Returns:
@@ -418,6 +421,7 @@ def update_bar_chart(feat, normalize, countries):
     Args:
         feat (str): The selected feature to display in the bar chart.
         normalize (list): List indicating whether data should be normalized.
+        countries (list): List of selected countries
 
     Returns:
         go.Figure: A Plotly graph object figure for the updated bar chart.
